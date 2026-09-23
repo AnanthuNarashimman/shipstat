@@ -1,36 +1,27 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# shipstat
 
-## Getting Started
+Download stats for any npm package: weekly trend, daily chart with release markers, version adoption,
+release cadence, and a shareable card. Everything shown comes from npm; nothing is estimated.
 
-First, run the development server:
+## Run it
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev        # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## How it works
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `/<package>` and `/@scope/<package>` render on first visit and are cached for 6 hours (ISR).
+- `src/lib/report.ts` builds one cached report per package from the npm registry and downloads API.
+  History is fetched in fixed 500-day windows (the API truncates longer ranges); past windows cache for a week.
+- Days where npm reports 0 across an otherwise busy stretch are treated as npm data gaps, not real zeros.
+  Trends compare only days with data; gaps are labeled on the chart.
+- `/api/card/<package>` renders the share card PNG (`?format=square`, `?download=1`). It is also the page's
+  Open Graph image.
+- `/api/search?q=` proxies npm search for the autocomplete.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Deploy
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Push to GitHub and import the repo in Vercel; no configuration is needed. See `.env.example` for the
+optional site URL and the optional Upstash counter.

@@ -1,26 +1,76 @@
 @import "tailwindcss";
 
+/* Scandinavian: warm paper, charcoal ink, hairlines, one calm blue, clay for events. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --bg: #f6f4ef;
+  --surface: #ffffff;
+  --sunken: #efece6;
+  --ink: #1f2326;
+  --ink-2: #4a5056;
+  --muted: #7d8287;
+  --line: #e4e0d8;
+  --grid: #eeebe5;
+  --accent: #2b6ca3;
+  --accent-wash: rgb(43 108 163 / 0.1);
+  --accent-soft: #a9c4db;
+  --clay: #c0612f;
+  --up: #3d7a57;
+  --down: #a4513a;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --bg: #161819;
+    --surface: #1c1f22;
+    --sunken: #222629;
+    --ink: #ecebe7;
+    --ink-2: #bdbab4;
+    --muted: #8d8a85;
+    --line: #2e3236;
+    --grid: #272b2e;
+    --accent: #4f8bc4;
+    --accent-wash: rgb(79 139 196 / 0.12);
+    --accent-soft: #3a5d7e;
+    --clay: #d07a4a;
+    --up: #79b690;
+    --down: #d98e78;
   }
 }
 
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-sunken: var(--sunken);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-grid: var(--grid);
+  --color-accent: var(--accent);
+  --color-accent-wash: var(--accent-wash);
+  --color-accent-soft: var(--accent-soft);
+  --color-clay: var(--clay);
+  --color-up: var(--up);
+  --color-down: var(--down);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html {
+  color-scheme: light dark;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+::selection {
+  background: var(--accent-wash);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
