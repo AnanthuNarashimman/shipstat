@@ -232,7 +232,7 @@ export default async function PackagePage({ params }: PageProps<"/[...pkg]">) {
               label="Best week"
               color="--series-4"
               value={totals.peakWeek ? formatCompact(totals.peakWeek.downloads) : "–"}
-              sub={totals.peakWeek ? `week of ${formatDay(totals.peakWeek.start)}` : undefined}
+              sub={totals.peakWeek ? formatDay(totals.peakWeek.start) : undefined}
             />
           </div>
           {(insights.length > 0 || totals.gapsLastWeek > 0) && (
