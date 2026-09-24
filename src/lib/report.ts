@@ -142,4 +142,4 @@ async function buildReport(name: string): Promise<Report | null> {
 }
 
 // The whole report is cached per package; one visitor or ten thousand, npm is asked once per window.
-export const getReport = unstable_cache(buildReport, ["report-v2"], { revalidate: 21600 });
+export const getReport = unstable_cache(buildReport, ["report-v3"], { revalidate: 21600 });

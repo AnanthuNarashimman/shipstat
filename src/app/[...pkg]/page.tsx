@@ -15,7 +15,8 @@ import { recordLookup } from "@/lib/counter";
 import { formatAgo, formatDay } from "@/lib/dates";
 import { formatBytes, formatCompact, formatFull, formatPct } from "@/lib/format";
 import { adoptionInsight, patternInsight, releaseInsight, trendInsight } from "@/lib/insights";
-import { isValidPackageName } from "@/lib/npm";
+import { isValidPackageName, type People } from "@/lib/npm";
+import { githubProfile, makerOf, npmProfile } from "@/lib/people";
 import { getReport, type Report } from "@/lib/report";
 import { cardPath, packagePath, siteUrl } from "@/lib/site";
 
@@ -160,6 +161,72 @@ function ExternalLink({
   );
 }
 
+// "Made by" line: who built this, with their face and where to find them.
+function MadeBy({ people }: { people: People }) {
+  const maker = makerOf(people);
+  if (!maker) return null;
+  const link = "font-medium text-ink-2 underline decoration-line underline-offset-4 transition-colors hover:text-accent hover:decoration-accent";
+  return (
+    <div className="mt-5 flex items-center gap-3">
+      {maker.avatar ? (
+        // eslint-disable-next-line @next/next/no-img-element -- small remote avatar, no optimisation needed
+        <img
+          src={maker.avatar}
+          alt=""
+          width={40}
+          height={40}
+          className="size-10 shrink-0 rounded-full border border-line bg-sunken"
+        />
+      ) : (
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-yellow-wash font-bold text-ink">
+          {maker.name.charAt(0).toUpperCase()}
+        </span>
+      )}
+      <div className="min-w-0 text-sm leading-snug">
+        <div className="text-muted">
+          Made by{" "}
+          {maker.url ? (
+            <a href={maker.url} target="_blank" rel="noopener noreferrer" className="font-semibold text-ink hover:text-accent">
+              {maker.name}
+            </a>
+          ) : (
+            <span className="font-semibold text-ink">{maker.name}</span>
+          )}
+        </div>
+        <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-muted">
+          {maker.github && (
+            <a href={githubProfile(maker.github)} target="_blank" rel="noopener noreferrer" className={link}>
+              @{maker.github} on GitHub
+            </a>
+          )}
+          {people.maintainers[0] && (
+            <a href={npmProfile(people.maintainers[0])} target="_blank" rel="noopener noreferrer" className={link}>
+              ~{people.maintainers[0]} on npm
+            </a>
+          )}
+          {people.maintainers.length > 1 && <span>+{people.maintainers.length - 1} more on npm</span>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Maintainers as links to their npm profiles; long lists fold into "+N more".
+function Maintainers({ names }: { names: string[] }) {
+  if (names.length === 0) return <>–</>;
+  const shown = names.slice(0, 3);
+  return (
+    <span className="inline-flex flex-wrap justify-end gap-x-2">
+      {shown.map((n) => (
+        <a key={n} href={npmProfile(n)} target="_blank" rel="noopener noreferrer" className="hover:text-accent">
+          ~{n}
+        </a>
+      ))}
+      {names.length > shown.length && <span className="text-muted">+{names.length - shown.length} more</span>}
+    </span>
+  );
+}
+
 function Fact({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex items-baseline justify-between gap-4 border-b border-line py-2.5 text-sm last:border-0">
@@ -224,6 +291,7 @@ export default async function PackagePage({ params }: PageProps<"/[...pkg]">) {
             <span className="font-medium text-down">Deprecated.</span> {meta.deprecated}
           </p>
         )}
+        <MadeBy people={meta.people} />
         <div className="mt-5 flex flex-wrap items-center gap-2 text-sm">
           <ExternalLink href={npmUrl} icon={ICONS.npm}>
             npm
@@ -354,7 +422,9 @@ export default async function PackagePage({ params }: PageProps<"/[...pkg]">) {
             <div>
               <Fact label="Provenance">{meta.provenance ? "Signed build" : "None"}</Fact>
               <Fact label="Node">{meta.node ?? "Any"}</Fact>
-              <Fact label="Maintainers">{meta.maintainers}</Fact>
+              <Fact label="Maintainers">
+                <Maintainers names={meta.people.maintainers} />
+              </Fact>
               <Fact label="First published">{formatDay(meta.created)}</Fact>
             </div>
           </dl>

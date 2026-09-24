@@ -42,6 +42,7 @@ async function getJson<T>(url: string, init: RequestInit & { next?: { revalidate
 // ---------- registry ----------
 
 type Manifest = {
+  author?: string | { name?: string; url?: string };
   version: string;
   description?: string;
   license?: string | { type?: string };
@@ -65,9 +66,17 @@ type Packument = {
   repository?: string | { url?: string };
   keywords?: string[];
   maintainers?: { name: string }[];
+  author?: string | { name?: string; url?: string };
 };
 
 export type Release = { version: string; date: string; prerelease: boolean };
+
+// Who made the package. Emails are never kept, only public names, usernames and links.
+export type People = {
+  author: { name: string; url: string | null } | null; // from package.json
+  github: string | null; // owner of the GitHub repository (a user or an organisation)
+  maintainers: string[]; // npm usernames
+};
 
 export type PackageMeta = {
   name: string;
@@ -78,6 +87,7 @@ export type PackageMeta = {
   repository: string | null;
   keywords: string[];
   maintainers: number;
+  people: People;
   created: string;
   deprecated: string | null;
   dependencies: number;
@@ -109,6 +119,27 @@ function repositoryUrl(repo: Packument["repository"]): string | null {
   return /^https?:\/\//.test(url) ? url : null;
 }
 
+// "Jane Doe <jane@example.com> (https://jane.dev)" or { name, email, url } → name and url, never the email.
+function authorOf(a: Packument["author"]): People["author"] {
+  if (!a) return null;
+  if (typeof a === "string") {
+    const name = a.replace(/<[^>]*>/, "").replace(/\([^)]*\)/, "").trim();
+    const url = a.match(/\((https?:\/\/[^)\s]+)\)/)?.[1] ?? null;
+    return name ? { name: name.slice(0, 60), url } : null;
+  }
+  const name = a.name?.trim();
+  return name ? { name: name.slice(0, 60), url: a.url && /^https?:\/\//.test(a.url) ? a.url : null } : null;
+}
+
+function peopleOf(doc: Packument, latest: Manifest): People {
+  const repo = repositoryUrl(doc.repository);
+  return {
+    author: authorOf(latest.author ?? doc.author),
+    github: repo?.match(/^https:\/\/github\.com\/([\w.-]+)\//)?.[1] ?? null,
+    maintainers: (doc.maintainers ?? []).map((m) => m.name).filter(Boolean).slice(0, 12),
+  };
+}
+
 function hasTypes(m: Manifest): boolean {
   if (m.types || m.typings) return true;
   return JSON.stringify(m.exports ?? "").includes('"types"');
@@ -138,6 +169,7 @@ export async function fetchPackageMeta(name: string): Promise<PackageMeta | null
     repository: repositoryUrl(doc.repository),
     keywords: (doc.keywords ?? []).slice(0, 8),
     maintainers: doc.maintainers?.length ?? 0,
+    people: peopleOf(doc, latest),
     created: (doc.time.created ?? releases[0]?.date ?? toDay(new Date())).slice(0, 10),
     deprecated: latest.deprecated ?? null,
     dependencies: Object.keys(latest.dependencies ?? {}).length,

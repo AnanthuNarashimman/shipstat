@@ -3,6 +3,7 @@ import { ImageResponse } from "next/og";
 import { formatDay, toDay } from "@/lib/dates";
 import { formatCompact, formatFull } from "@/lib/format";
 import { isValidPackageName } from "@/lib/npm";
+import { makerOf } from "@/lib/people";
 import { getReport } from "@/lib/report";
 
 const C = {
@@ -88,6 +89,19 @@ function sparkPath(values: number[], w: number, h: number) {
 }
 
 // Cut at a word boundary so the card never ends on half a word.
+// The maker's GitHub avatar as a data URL, or null if GitHub is slow or has none. Cached for a day.
+async function loadAvatar(url: string | null): Promise<string | null> {
+  if (!url) return null;
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(2500), next: { revalidate: 86400 } });
+    const type = res.headers.get("content-type") ?? "";
+    if (!res.ok || !/^image\/(png|jpeg)/.test(type)) return null;
+    return `data:${type.split(";")[0]};base64,${Buffer.from(await res.arrayBuffer()).toString("base64")}`;
+  } catch {
+    return null;
+  }
+}
+
 function truncate(s: string, n: number) {
   if (s.length <= n) return s;
   const cut = s.slice(0, n - 1);
@@ -110,14 +124,16 @@ export async function GET(request: Request, ctx: RouteContext<"/api/card/[...pkg
   const { meta, totals } = report;
   const spark = report.sparkline.length >= 2 ? report.sparkline : null;
   const sparkW = square ? 936 : 400;
-  const sparkH = square ? 260 : 170;
+  const sparkH = square ? 240 : 140;
   const path = spark ? sparkPath(spark, sparkW, sparkH) : null;
 
-  const [regular, semibold, display] = await Promise.all([
+  const maker = makerOf(meta.people);
+  const [regular, semibold, display, avatar] = await Promise.all([
     // The static Google Sans files use a font feature the image renderer can't parse; Flex renders fine.
     loadFont("Google Sans Flex", 400),
     loadFont("Google Sans Flex", 600),
     loadFont("Google Sans Flex", 800),
+    loadAvatar(maker?.avatar ?? null),
   ]);
   const fonts = [
     ...(regular ? [{ name: "Google Sans Flex", data: regular, weight: 400 as const, style: "normal" as const }] : []),
@@ -132,7 +148,7 @@ export async function GET(request: Request, ctx: RouteContext<"/api/card/[...pkg
   const exactOrCompact = (n: number) => (n >= 1_000_000 ? formatCompact(n) : formatFull(n));
   const total = exactOrCompact(totals.allTime);
   const weekly = exactOrCompact(totals.lastWeek);
-  const totalSize = square ? 168 : total.length > 6 ? 112 : 132;
+  const totalSize = square ? 156 : total.length > 6 ? 96 : 112;
 
   const headline = (
     <div style={{ display: "flex", flexDirection: "column" }}>
@@ -221,6 +237,33 @@ export async function GET(request: Request, ctx: RouteContext<"/api/card/[...pkg
           {meta.description && (
             <div style={{ display: "flex", marginTop: 14, fontSize: 26, color: C.muted, maxWidth: 1000 }}>
               {truncate(meta.description, square ? 64 : 72)}
+            </div>
+          )}
+          {maker && (
+            <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 14, fontSize: 24, color: C.ink2 }}>
+              {avatar ? (
+                // eslint-disable-next-line @next/next/no-img-element -- rendered by the image generator, not the browser
+                <img src={avatar} alt="" width={40} height={40} style={{ borderRadius: 999, border: `2px solid ${C.line}` }} />
+              ) : (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: 40,
+                    height: 40,
+                    borderRadius: 999,
+                    background: "#fff1c2",
+                    color: C.ink,
+                    fontWeight: 700,
+                  }}
+                >
+                  {maker.name.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <span style={{ display: "flex", gap: 7 }}>
+                by <span style={{ color: C.ink, fontWeight: 600 }}>{truncate(maker.name, 36)}</span>
+              </span>
             </div>
           )}
         </div>
