@@ -22,14 +22,26 @@ export function ThemeToggle() {
 
     // Preferred: the new theme spreads in a circle from the button.
     if (document.startViewTransition) {
+      // Centre of the button and the distance to the farthest screen corner, in viewport pixels.
       const r = e.currentTarget.getBoundingClientRect();
       const x = r.left + r.width / 2;
       const y = r.top + r.height / 2;
-      const radius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
-      root.style.setProperty("--theme-x", `${x}px`);
-      root.style.setProperty("--theme-y", `${y}px`);
-      root.style.setProperty("--theme-r", `${radius}px`);
-      document.startViewTransition(() => apply(next));
+      const w = root.clientWidth;
+      const h = window.innerHeight;
+      const radius = Math.ceil(Math.hypot(Math.max(x, w - x), Math.max(y, h - y)));
+
+      const transition = document.startViewTransition(() => apply(next));
+      // Animate the incoming snapshot with concrete values once the browser has taken both snapshots.
+      transition.ready
+        .then(() => {
+          root.animate(
+            { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`] },
+            { duration: 550, easing: "cubic-bezier(0.4, 0, 0.2, 1)", pseudoElement: "::view-transition-new(root)" },
+          );
+        })
+        .catch(() => {
+          // Transition skipped (e.g. tab hidden): the theme has still been applied.
+        });
       return;
     }
 

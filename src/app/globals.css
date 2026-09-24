@@ -209,22 +209,13 @@
   transform: translateY(1px);
 }
 
-/* Theme switch: the new theme spreads in a circle from the toggle (see ThemeToggle). */
+/* Theme switch: the new theme spreads in a circle from the toggle. The circle itself is animated from
+   ThemeToggle with real pixel values (CSS variables inside these keyframes aren't reliable on mobile);
+   here we only switch off the browser's default cross-fade so it doesn't fight the circle. */
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation: none;
   mix-blend-mode: normal;
-}
-::view-transition-new(root) {
-  animation: theme-reveal 0.55s cubic-bezier(0.4, 0, 0.2, 1);
-}
-@keyframes theme-reveal {
-  from {
-    clip-path: circle(0 at var(--theme-x, 50%) var(--theme-y, 0));
-  }
-  to {
-    clip-path: circle(var(--theme-r, 150vmax) at var(--theme-x, 50%) var(--theme-y, 0));
-  }
 }
 /* Browsers without view transitions: a short colour cross-fade instead. */
 html.theme-fading,
