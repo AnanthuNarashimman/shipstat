@@ -34,9 +34,10 @@ shipstat shows only what npm actually reports, and explains what the numbers mea
 ## What you get
 
 <p align="center">
-  <img src="docs/images/package.png" alt="Package page for react: all-time and weekly downloads, trend, and a daily chart with weekday and weekend bars, a 7-day average and release markers" width="100%">
+  <img src="docs/images/package.png" alt="Package page for react: who made it, links to npm, the repository and homepage, all-time and weekly downloads, and a daily chart with weekday and weekend bars, a 7-day average and release markers" width="100%">
 </p>
 
+- **Credit where it's due.** Every package shows who made it, with their GitHub avatar and links to their GitHub and npm profiles.
 - **All-time downloads up front,** with weekly downloads, week-over-week trend, the last 30 days and the best week next to them.
 - **A chart that explains itself.** Daily bars split into weekdays and weekends, a 7-day average, and a marker for every release, so the jump after `v2.0` is right there. Switch between 30 days, 90 days, 1 year and all time. Every point has a hover tooltip, keyboard support and a table view.
 - **Plain-English insights,** such as *"Downloads dip on weekends, which usually means most installs come from developers at work."*
