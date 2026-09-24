@@ -58,10 +58,13 @@ shipstat shows only what npm actually reports, and explains what the numbers mea
 Every package gets its own card. Paste a shipstat link on X, LinkedIn, Slack or Discord and it unfurls by
 itself. The card also downloads as a PNG, wide or square.
 
+Each card leads with all-time downloads, adds the last 7 and 30 days and a 12-week sparkline, and is marked as an
+npm package. Since the numbers change, every card says when it was generated and how far npm's data goes.
+
 <p align="center">
-  <img src="docs/images/card-wide.png" alt="Wide share card for react: 11.3B downloads all time, 133M this week" width="64%">
+  <img src="docs/images/card-wide.png" alt="Wide share card for react: 11.3B downloads all time, 133M in the last 7 days, 633M in 30 days, generated Sep 24, 2026 with npm data through Sep 21, 2026" width="64%">
   &nbsp;
-  <img src="docs/images/card-square.png" alt="Square share card for zod" width="33.5%">
+  <img src="docs/images/card-square.png" alt="Square share card for zod: 8.94B downloads all time" width="33.5%">
 </p>
 
 Put it in your README with one line:
@@ -91,8 +94,9 @@ flowchart LR
   so a popular package costs a few npm requests every 6 hours, however many people view it.
 - **History in fixed windows.** npm's range endpoint silently cuts off anything longer than about 18 months, so
   history is fetched in fixed 500-day windows. Windows fully in the past never change, so they're cached for a week.
-- **Gap detection.** A zero in the middle of an otherwise busy stretch is treated as missing data, not a real
-  zero (`src/lib/series.ts`).
+- **Gap detection.** Every package is checked against a reference package that never genuinely has a zero day.
+  If it reads 0, npm has no data for that day for anyone, so the day is marked as missing rather than counted as
+  a real zero, for small packages as well as big ones (`src/lib/series.ts`).
 - **Built to stay up.** Requests that npm rate-limits (429) or that fail with a 5xx error are retried, a failing
   "latest day" lookup falls back to npm's usual lag, and a share card whose font fails to render falls back to a
   built-in one.
