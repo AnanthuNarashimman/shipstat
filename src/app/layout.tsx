@@ -17,6 +17,15 @@ export const metadata: Metadata = {
     template: "%s · shipstat",
   },
   description: "Clear download stats for any npm package. Real numbers from npm, nothing estimated.",
+  // Link previews (WhatsApp, Telegram, Slack…) show the site name as the heading; the image comes from opengraph-image.tsx.
+  openGraph: {
+    siteName: "shipstat",
+    type: "website",
+    url: "/",
+    title: "shipstat · npm package stats",
+    description: "Clear download stats for any npm package. Real numbers from npm, nothing estimated.",
+  },
+  twitter: { card: "summary_large_image" },
 };
 
 // Runs before first paint so a saved dark theme never flashes light. Light is the default.

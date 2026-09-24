@@ -16,6 +16,7 @@ import { formatAgo, formatDay } from "@/lib/dates";
 import { formatBytes, formatCompact, formatFull, formatPct } from "@/lib/format";
 import { adoptionInsight, patternInsight, releaseInsight, trendInsight } from "@/lib/insights";
 import { isValidPackageName, type People } from "@/lib/npm";
+import { NPM_MARK } from "@/lib/og";
 import { githubProfile, makerOf, npmProfile } from "@/lib/people";
 import { getReport, type Report } from "@/lib/report";
 import { cardPath, packagePath, siteUrl } from "@/lib/site";
@@ -57,6 +58,8 @@ export async function generateMetadata({ params }: PageProps<"/[...pkg]">): Prom
     description,
     alternates: { canonical: packagePath(meta.name) },
     openGraph: {
+      siteName: "shipstat",
+      type: "website",
       title: `${meta.name} on shipstat`,
       description,
       url: packagePath(meta.name),
@@ -92,6 +95,13 @@ function listDays(days: string[]): string {
   return names.length <= 1 ? (names[0] ?? "") : `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
 }
 
+// Font size for a number inside a stat tile (an @container): its normal size, or smaller if that is what
+// it takes to fit the tile. Space beside it (e.g. for a sparkline) comes from the --reserve variable.
+function fitToTile(text: string, max: string): string {
+  const em = (0.62 * text.length).toFixed(2); // rough width of the text in ems at this font
+  return `min(${max}, calc((100cqi - var(--reserve, 0px)) / ${em}))`;
+}
+
 function StatLabel({ color, children }: { color: string; children: React.ReactNode }) {
   return (
     <span className="flex items-center gap-1.5 text-xs text-muted">
@@ -103,10 +113,15 @@ function StatLabel({ color, children }: { color: string; children: React.ReactNo
 
 function Stat({ label, color, value, sub }: { label: string; color: string; value: string; sub?: React.ReactNode }) {
   return (
-    <div className="px-6 py-6">
+    <div className="@container bg-surface px-6 py-6">
       <StatLabel color={color}>{label}</StatLabel>
       <div className="mt-2 flex h-12 items-end">
-        <span className="text-3xl font-bold tracking-[-0.01em] text-ink">{value}</span>
+        <span
+          className="font-bold tracking-[-0.01em] whitespace-nowrap text-ink"
+          style={{ fontSize: fitToTile(value, "1.875rem") }}
+        >
+          {value}
+        </span>
       </div>
       {sub && <div className="mt-2 text-sm text-muted">{sub}</div>}
     </div>
@@ -317,26 +332,45 @@ export default async function PackagePage({ params }: PageProps<"/[...pkg]">) {
       <div className="space-y-5">
         {/* Headline numbers */}
         <div className="overflow-hidden rounded-2xl border border-line bg-surface">
-          <div className="grid grid-cols-[minmax(0,1fr)] sm:grid-cols-[repeat(2,minmax(0,1fr))] sm:divide-line max-sm:divide-y max-sm:divide-line lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1.25fr)_minmax(0,1fr)_minmax(0,1fr)] lg:divide-x">
-            {/* Primary: everything the package has done */}
-            <div className="px-6 py-6">
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-px bg-line sm:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1fr)]">
+            {/* Primary: everything the package has done, on a row of its own so it never has to shrink */}
+            <div className="@container relative bg-surface px-6 py-7 sm:col-span-3 sm:[--reserve:112px]">
+              {/* npm mark on the right, filling the row on wider screens; the number leaves room for it */}
+              <svg
+                viewBox="0 0 24 24"
+                aria-hidden
+                className="absolute top-1/2 right-8 hidden size-16 -translate-y-1/2 sm:block"
+              >
+                <path d={NPM_MARK} fill="#cb3837" />
+              </svg>
               <StatLabel color="--accent">All-time downloads</StatLabel>
-              <div className="mt-2 flex h-12 items-end">
-                <span className="text-[clamp(1.75rem,8.5vw,3rem)] leading-none font-bold tracking-[-0.02em] text-ink">{formatFull(totals.allTime)}</span>
+              <div className="mt-2 flex h-16 items-end">
+                {/* Sized to the tile, not the screen: full size when it fits, smaller for long numbers in narrow tiles */}
+                <span
+                  className="leading-none font-bold tracking-[-0.02em] whitespace-nowrap text-ink"
+                  style={{ fontSize: fitToTile(formatFull(totals.allTime), "3.75rem") }}
+                >
+                  {formatFull(totals.allTime)}
+                </span>
               </div>
               <div className="mt-2 text-sm text-muted">since {formatDay(report.daily.start)}</div>
             </div>
             {/* Weekly, with where it's heading */}
-            <div className="px-6 py-6">
+            <div className="@container bg-surface px-6 py-6">
               <StatLabel color="--avg">
                 Weekly downloads
                 <span className="text-muted/80">
                   · {formatDay(totals.lastWeekStart, false)} – {formatDay(report.lastDay, false)}
                 </span>
               </StatLabel>
-              <div className="mt-2 flex h-12 items-end justify-between gap-3">
-                <span className="text-3xl font-bold tracking-[-0.01em] text-ink">{formatFull(totals.lastWeek)}</span>
-                <div className="shrink-0 pb-1.5">
+              <div className="mt-2 flex h-12 items-end justify-between gap-3 [--reserve:0px] @[19rem]:[--reserve:100px]">
+                <span
+                  className="font-bold tracking-[-0.01em] whitespace-nowrap text-ink"
+                  style={{ fontSize: fitToTile(formatFull(totals.lastWeek), "1.875rem") }}
+                >
+                  {formatFull(totals.lastWeek)}
+                </span>
+                <div className="hidden shrink-0 pb-1.5 @[19rem]:block">
                   <Sparkline values={report.sparkline} width={88} height={28} color="var(--avg)" />
                 </div>
               </div>
