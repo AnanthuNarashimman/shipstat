@@ -45,9 +45,10 @@ export function SharePanel({ pageUrl, cardUrl, previewSrc, downloadWide, downloa
   const secondary =
     "inline-flex items-center gap-2 rounded-xl border border-line bg-surface px-4 py-2.5 text-sm font-medium text-ink transition-colors hover:border-accent hover:text-accent";
 
+  // minmax(0, …) columns: a long README line must scroll inside its box, never widen the layout on phones.
   return (
-    <div className="grid gap-8 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] lg:items-center">
-      <div className="[perspective:1100px]" onPointerMove={onMove} onPointerLeave={onLeave}>
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] lg:items-center">
+      <div className="min-w-0 [perspective:1100px]" onPointerMove={onMove} onPointerLeave={onLeave}>
         <div
           ref={tiltRef}
           className="transition-transform duration-300 ease-out motion-reduce:transition-none"
@@ -64,7 +65,7 @@ export function SharePanel({ pageUrl, cardUrl, previewSrc, downloadWide, downloa
         </div>
       </div>
 
-      <div className="flex flex-col gap-5">
+      <div className="flex min-w-0 flex-col gap-5">
         <div className="flex flex-wrap gap-2">
           <a className="btn-cta inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold" href={downloadWide} download>
             <svg viewBox="0 0 20 20" aria-hidden className="size-4">
@@ -91,7 +92,7 @@ export function SharePanel({ pageUrl, cardUrl, previewSrc, downloadWide, downloa
               {copied === "md" ? "Copied" : "Copy"}
             </button>
           </div>
-          <pre className="mt-2 overflow-x-auto rounded-xl border border-line bg-sunken px-3.5 py-3 font-mono text-xs leading-relaxed text-ink-2">
+          <pre className="mt-2 max-w-full overflow-x-auto rounded-xl border border-line bg-sunken px-3.5 py-3 font-mono text-xs leading-relaxed text-ink-2">
             {markdown}
           </pre>
         </div>

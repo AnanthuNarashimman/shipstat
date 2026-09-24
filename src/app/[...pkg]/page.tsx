@@ -317,12 +317,12 @@ export default async function PackagePage({ params }: PageProps<"/[...pkg]">) {
       <div className="space-y-5">
         {/* Headline numbers */}
         <div className="overflow-hidden rounded-2xl border border-line bg-surface">
-          <div className="grid sm:grid-cols-2 sm:divide-line max-sm:divide-y max-sm:divide-line lg:grid-cols-[1.35fr_1.25fr_1fr_1fr] lg:divide-x">
+          <div className="grid grid-cols-[minmax(0,1fr)] sm:grid-cols-[repeat(2,minmax(0,1fr))] sm:divide-line max-sm:divide-y max-sm:divide-line lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1.25fr)_minmax(0,1fr)_minmax(0,1fr)] lg:divide-x">
             {/* Primary: everything the package has done */}
             <div className="px-6 py-6">
               <StatLabel color="--accent">All-time downloads</StatLabel>
               <div className="mt-2 flex h-12 items-end">
-                <span className="text-5xl leading-none font-bold tracking-[-0.02em] text-ink">{formatFull(totals.allTime)}</span>
+                <span className="text-[clamp(1.75rem,8.5vw,3rem)] leading-none font-bold tracking-[-0.02em] text-ink">{formatFull(totals.allTime)}</span>
               </div>
               <div className="mt-2 text-sm text-muted">since {formatDay(report.daily.start)}</div>
             </div>
