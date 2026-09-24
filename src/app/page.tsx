@@ -75,7 +75,7 @@ const FEATURES = [
   },
   {
     title: "Instant, no account",
-    body: "Type a package name. No sign-up, no tracking, no dashboard to configure.",
+    body: "Type a package name. No sign-up, no cookies, no dashboard to configure.",
     icon: "M11 2.5 4.5 11H10l-1 6.5L15.5 9H10z",
     tone: "amber" as const,
   },

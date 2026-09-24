@@ -1,3 +1,4 @@
+import { Analytics } from "@vercel/analytics/next";
 import type { Metadata } from "next";
 import { Google_Sans, JetBrains_Mono } from "next/font/google";
 
@@ -45,6 +46,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="flex min-h-full flex-col">
         <div className="flex-1">{children}</div>
         <SiteFooter />
+        {/* Vercel Web Analytics: anonymous page-view counts, no cookies */}
+        <Analytics />
       </body>
     </html>
   );
