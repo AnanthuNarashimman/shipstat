@@ -1,9 +1,20 @@
-// Absolute base URL for metadata and share links.
+// "shipstat.dev", "https://shipstat.dev/" → "https://shipstat.dev"; blank or unparseable → null.
+function normalizeUrl(value: string | undefined): string | null {
+  const v = value?.trim();
+  if (!v) return null;
+  try {
+    return new URL(/^https?:\/\//.test(v) ? v : `https://${v}`).origin;
+  } catch {
+    return null;
+  }
+}
+
+// Absolute base URL for metadata and share links. An explicit NEXT_PUBLIC_SITE_URL wins; a blank or
+// malformed one is ignored rather than breaking the build, falling back to Vercel's production domain.
 export const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL ??
-  (process.env.VERCEL_PROJECT_PRODUCTION_URL
-    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-    : "http://localhost:3000");
+  normalizeUrl(process.env.NEXT_PUBLIC_SITE_URL) ??
+  normalizeUrl(process.env.VERCEL_PROJECT_PRODUCTION_URL) ??
+  "http://localhost:3000";
 
 // Scoped names keep their slash in the URL: /@scope/name.
 export function packagePath(name: string): string {
