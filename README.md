@@ -14,6 +14,17 @@
 </p>
 
 <p align="center">
+  <a href="https://shipstat.ananthu.xyz"><b>→ Open shipstat.ananthu.xyz</b></a>
+  <br>
+  <sub>
+    Try <a href="https://shipstat.ananthu.xyz/react">react</a> ·
+    <a href="https://shipstat.ananthu.xyz/zod">zod</a> ·
+    <a href="https://shipstat.ananthu.xyz/@tanstack/react-query">@tanstack/react-query</a> ·
+    <a href="https://shipstat.ananthu.xyz/tracetel">tracetel</a>
+  </sub>
+</p>
+
+<p align="center">
   <img alt="Next.js 16" src="https://img.shields.io/badge/Next.js-16-231a15?logo=nextdotjs">
   <img alt="React 19" src="https://img.shields.io/badge/React-19-231a15?logo=react">
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-strict-231a15?logo=typescript">
@@ -72,8 +83,11 @@ when it was generated and how far npm's data goes.
 Put it in your README with one line:
 
 ```md
-[![your-package on shipstat](https://your-shipstat-domain/api/card/your-package)](https://your-shipstat-domain/your-package)
+[![your-package on shipstat](https://shipstat.ananthu.xyz/api/card/your-package)](https://shipstat.ananthu.xyz/your-package)
 ```
+
+Replace `your-package` with your package name (scoped names work too, e.g. `@scope/name`), or copy the snippet
+ready-made from the Share section of your package's page.
 
 <p align="center">
   <img src="docs/images/share-section.png" alt="The share-card section of the landing page, showing a card unfurled in a post" width="100%">
