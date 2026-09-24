@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { SearchResults } from "../SearchResults";
+import { Spinner } from "../Spinner";
 import { usePackageSearch } from "../usePackageSearch";
 
 // Where the search lands on the package page.
@@ -54,7 +55,7 @@ export function HeroSearch() {
   const [tab, setTab] = useState<(typeof TABS)[number]["key"]>("downloads");
   const [focused, setFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const { boxRef, listId, query, hits, active, setActive, visible, go, submit, inputProps } = usePackageSearch(
+  const { boxRef, listId, query, hits, active, setActive, visible, go, submit, pending, inputProps } = usePackageSearch(
     tab === "downloads" ? "" : `#${tab}`,
   );
   const placeholder = useTypedPlaceholder(!focused && query === "");
@@ -120,13 +121,20 @@ export function HeroSearch() {
           </div>
           <button
             type="button"
-            aria-label="Show stats"
+            aria-label={pending ? "Loading stats" : "Show stats"}
+            aria-busy={pending}
+            disabled={pending}
             onClick={() => (query.trim() ? submit() : inputRef.current?.focus())}
-            className="flex h-10 w-12 shrink-0 items-center justify-center btn-cta rounded-xl"
+            className="flex h-10 w-12 shrink-0 items-center justify-center btn-cta rounded-xl disabled:cursor-progress"
           >
-            <svg aria-hidden viewBox="0 0 20 20" className="size-5">
-              <path d="M4 10h12m-5-5 5 5-5 5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+            {/* The arrow turns into a spinner while the search is on its way */}
+            {pending ? (
+              <Spinner className="size-5" />
+            ) : (
+              <svg aria-hidden viewBox="0 0 20 20" className="size-5">
+                <path d="M4 10h12m-5-5 5 5-5 5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            )}
           </button>
         </div>
       </div>

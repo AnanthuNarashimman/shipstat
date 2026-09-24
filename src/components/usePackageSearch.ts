@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, useTransition } from "react";
 
 import { packagePath } from "@/lib/site";
 
@@ -47,11 +47,15 @@ export function usePackageSearch(hash = "") {
 
   const visible = open && query.trim().length >= 2 && hits.length > 0;
 
+  // `pending` stays true from the moment a search is sent until the next page starts rendering,
+  // so inputs can show a loader while the request is in flight.
+  const [pending, startTransition] = useTransition();
+
   function go(name: string) {
     const clean = name.trim().replace(/^https?:\/\/(www\.)?npmjs\.com\/package\//, "");
-    if (!clean) return;
+    if (!clean || pending) return;
     setOpen(false);
-    router.push(packagePath(clean) + hash);
+    startTransition(() => router.push(packagePath(clean) + hash));
   }
 
   const submit = () => go(visible && active >= 0 ? hits[active].name : query);
@@ -88,5 +92,5 @@ export function usePackageSearch(hash = "") {
     onKeyDown,
   };
 
-  return { boxRef, listId, query, hits, active, setActive, visible, go, submit, inputProps };
+  return { boxRef, listId, query, hits, active, setActive, visible, go, submit, pending, inputProps };
 }
