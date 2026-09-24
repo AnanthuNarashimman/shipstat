@@ -49,6 +49,12 @@ export function markGaps(counts: number[]): (number | null)[] {
   return out;
 }
 
+// Marks days npm has no data for, using a reference package that is never genuinely at zero:
+// a day where the reference reads 0 is an outage on npm's side, for every package, big or small.
+export function markOutages(counts: number[], reference: number[]): (number | null)[] {
+  return counts.map((c, i) => (c === 0 && reference[i] === 0 ? null : c));
+}
+
 // Consecutive 7-day buckets aligned so the last bucket ends on the last day.
 export function weeklyBuckets(series: Daily): Bucket[] {
   const { start, counts } = series;

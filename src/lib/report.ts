@@ -11,7 +11,7 @@ import {
   fetchVersionDownloads,
   type PackageMeta,
 } from "./npm";
-import { markGaps, sum, validMean, weekendRatio, weeklyBuckets, type Bucket, type Daily } from "./series";
+import { markGaps, markOutages, sum, validMean, weekendRatio, weeklyBuckets, type Bucket, type Daily } from "./series";
 
 export type VersionShare = { version: string; downloads: number; share: number };
 
@@ -25,6 +25,8 @@ export type Report = {
     allTime: number;
     trendPct: number | null; // last 7 days vs the 7 before, on days with data
     gapsLastWeek: number;
+    gapDatesLastWeek: string[]; // days in the last 7 that npm has no data for
+    lastWeekStart: string; // the last 7 days run lastWeekStart → lastDay (UTC)
     peakWeek: Bucket | null;
   };
   sparkline: number[]; // last 12 weeks, as downloads per day; shape only
@@ -41,6 +43,9 @@ export type Report = {
 };
 
 const TOP_VERSIONS = 6;
+
+// A package big enough that a zero-download day can only mean npm has no data for that day.
+const REFERENCE_PACKAGE = "react";
 
 function versionShares(byVersion: Record<string, number>): Report["versions"]["rows"] {
   const entries = Object.entries(byVersion)
@@ -73,12 +78,15 @@ async function buildReport(name: string): Promise<Report | null> {
   if (!meta) return null;
 
   const start = meta.created > DOWNLOADS_EPOCH ? meta.created : DOWNLOADS_EPOCH;
-  const [raw, byVersion] = await Promise.all([
+  const [raw, byVersion, reference] = await Promise.all([
     fetchDailyDownloads(meta.name, start, lastDay),
     fetchVersionDownloads(meta.name),
+    // Shared across every package (same cached windows), so this costs almost nothing after the first report.
+    fetchDailyDownloads(REFERENCE_PACKAGE, start, lastDay).catch(() => null),
   ]);
 
-  const daily: Daily = { start, counts: markGaps(raw) };
+  // Prefer the reference package to spot npm outages; fall back to the per-package heuristic without it.
+  const daily: Daily = { start, counts: reference ? markOutages(raw, reference) : markGaps(raw) };
   const counts = daily.counts;
   const lastWeekCounts = counts.slice(-7);
   const prevWeekCounts = counts.slice(-14, -7);
@@ -109,6 +117,8 @@ async function buildReport(name: string): Promise<Report | null> {
       allTime: sum(counts),
       trendPct,
       gapsLastWeek: lastWeekCounts.filter((c) => c === null).length,
+      gapDatesLastWeek: lastWeekCounts.flatMap((c, i) => (c === null ? [addDays(lastDay, i - lastWeekCounts.length + 1)] : [])),
+      lastWeekStart: addDays(lastDay, 1 - Math.min(7, counts.length)),
       peakWeek: peakWeek && peakWeek.downloads > 0 ? peakWeek : null,
     },
     // Average per day with data, so a week with an npm outage doesn't draw as a dip.
@@ -132,4 +142,4 @@ async function buildReport(name: string): Promise<Report | null> {
 }
 
 // The whole report is cached per package; one visitor or ten thousand, npm is asked once per window.
-export const getReport = unstable_cache(buildReport, ["report-v1"], { revalidate: 21600 });
+export const getReport = unstable_cache(buildReport, ["report-v2"], { revalidate: 21600 });

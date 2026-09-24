@@ -49,6 +49,15 @@ export async function ProductPreview({ name }: { name: string }) {
             <div className="flex items-baseline gap-2.5">
               <span className="text-2xl font-semibold tracking-tight text-ink">{meta.name}</span>
               <span className="rounded-md bg-sunken px-1.5 py-0.5 font-mono text-xs text-ink-2">v{meta.version}</span>
+              <span className="inline-flex items-center gap-1.5 rounded-md border border-line px-1.5 py-0.5 text-xs text-ink-2">
+                <svg viewBox="0 0 24 24" aria-hidden className="size-3.5">
+                  <path
+                    d="M1.763 0C.786 0 0 .786 0 1.763v20.474C0 23.214.786 24 1.763 24h20.474c.977 0 1.763-.786 1.763-1.763V1.763C24 .786 23.214 0 22.237 0zM5.13 5.323l13.837.019-.009 13.836h-3.464l.01-10.382h-3.456L12.04 19.17H5.113z"
+                    fill="#cb3837"
+                  />
+                </svg>
+                npm package
+              </span>
             </div>
             <div className="mt-4 text-xs text-muted">All-time downloads</div>
             <div className="mt-1 flex items-baseline gap-3">

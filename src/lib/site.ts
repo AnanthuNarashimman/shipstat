@@ -11,7 +11,7 @@ export function packagePath(name: string): string {
 }
 
 // Bump when the share card's design changes: a new URL skips browser and social-network caches of the old image.
-const CARD_VERSION = "4";
+const CARD_VERSION = "6";
 
 // Same-origin URL of a package's share card, with optional extra query params.
 export function cardPath(name: string, params: Record<string, string> = {}): string {

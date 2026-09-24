@@ -7,6 +7,7 @@ import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ReleaseList } from "@/components/ReleaseList";
 import { SearchBox } from "@/components/SearchBox";
+import { PixelSkyline } from "@/components/PixelSkyline";
 import { SharePanel } from "@/components/SharePanel";
 import { Sparkline } from "@/components/Sparkline";
 import { VersionAdoption } from "@/components/VersionAdoption";
@@ -47,8 +48,7 @@ export async function generateMetadata({ params }: PageProps<"/[...pkg]">): Prom
   if (!report) return { title: "Package not found" };
 
   const { totals, meta } = report;
-  const trend = totals.trendPct === null ? "" : ` (${formatPct(totals.trendPct)} vs last week)`;
-  const description = `${formatFull(totals.allTime)} downloads all time. ${formatFull(totals.lastWeek)} in the last week${trend}. v${meta.version}.`;
+  const description = `${formatFull(totals.allTime)} downloads all time, ${formatFull(totals.lastWeek)} in the last 7 days. v${meta.version} on npm.`;
   const card = cardPath(meta.name);
 
   return {
@@ -85,6 +85,12 @@ function Section({
   );
 }
 
+// "Sep 15", "Sep 15 and Sep 17", "Sep 15, Sep 16 and Sep 17"
+function listDays(days: string[]): string {
+  const names = days.map((d) => formatDay(d, false));
+  return names.length <= 1 ? (names[0] ?? "") : `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
+}
+
 function StatLabel({ color, children }: { color: string; children: React.ReactNode }) {
   return (
     <span className="flex items-center gap-1.5 text-xs text-muted">
@@ -103,6 +109,54 @@ function Stat({ label, color, value, sub }: { label: string; color: string; valu
       </div>
       {sub && <div className="mt-2 text-sm text-muted">{sub}</div>}
     </div>
+  );
+}
+
+const ICONS = {
+  // a package box
+  npm: "M10 2.5 16.5 6v8L10 17.5 3.5 14V6zM3.5 6 10 9.5 16.5 6M10 9.5v8",
+  code: "M7 6 3 10l4 4M13 6l4 4-4 4",
+  globe: "M10 17.5a7.5 7.5 0 1 0 0-15 7.5 7.5 0 0 0 0 15ZM2.5 10h15M10 2.5c2 2.2 2.9 4.7 2.9 7.5s-.9 5.3-2.9 7.5c-2-2.2-2.9-4.7-2.9-7.5S8 4.7 10 2.5Z",
+  github:
+    "M10 1.5a8.5 8.5 0 0 0-2.7 16.6c.4 0 .6-.2.6-.4v-1.6c-2.4.5-2.9-1.1-2.9-1.1-.4-1-1-1.3-1-1.3-.8-.5.1-.5.1-.5.9.1 1.3.9 1.3.9.8 1.3 2 1 2.5.7.1-.6.3-1 .6-1.2-1.9-.2-3.9-1-3.9-4.2 0-.9.3-1.7.9-2.3-.1-.2-.4-1.1.1-2.2 0 0 .7-.2 2.3.9a8 8 0 0 1 4.2 0c1.6-1.1 2.3-.9 2.3-.9.5 1.1.2 2 .1 2.2.5.6.9 1.4.9 2.3 0 3.3-2 4-3.9 4.2.3.3.6.8.6 1.6v2.3c0 .2.2.5.6.4A8.5 8.5 0 0 0 10 1.5Z",
+};
+
+// A link off-site that reads as clickable at a glance: icon, border, and an arrow that nudges on hover.
+function ExternalLink({
+  href,
+  icon,
+  filled = false,
+  children,
+}: {
+  href: string;
+  icon: string;
+  filled?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group inline-flex items-center gap-2 rounded-lg border border-line bg-surface px-3 py-1.5 font-medium text-ink transition-colors hover:border-accent hover:text-accent"
+    >
+      <svg viewBox="0 0 20 20" aria-hidden className="size-4 text-ink-2 transition-colors group-hover:text-accent">
+        {filled ? (
+          <path d={icon} fill="currentColor" />
+        ) : (
+          <path d={icon} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        )}
+      </svg>
+      {children}
+      <svg
+        viewBox="0 0 12 12"
+        aria-hidden
+        className="size-3 text-muted transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-accent"
+      >
+        <path d="M3.5 8.5 8.5 3.5M4.5 3.5h4v4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      <span className="sr-only">(opens in a new tab)</span>
+    </a>
   );
 }
 
@@ -170,21 +224,25 @@ export default async function PackagePage({ params }: PageProps<"/[...pkg]">) {
             <span className="font-medium text-down">Deprecated.</span> {meta.deprecated}
           </p>
         )}
-        <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-sm">
-          <span className="text-muted">Last release {formatAgo(report.releases.daysSinceLast)}</span>
-          <a href={npmUrl} className="text-ink-2 underline decoration-line underline-offset-4 hover:text-ink">
+        <div className="mt-5 flex flex-wrap items-center gap-2 text-sm">
+          <ExternalLink href={npmUrl} icon={ICONS.npm}>
             npm
-          </a>
+          </ExternalLink>
           {meta.repository && (
-            <a href={meta.repository} className="text-ink-2 underline decoration-line underline-offset-4 hover:text-ink">
+            <ExternalLink
+              href={meta.repository}
+              icon={/github\.com/.test(meta.repository) ? ICONS.github : ICONS.code}
+              filled={/github\.com/.test(meta.repository)}
+            >
               Repository
-            </a>
+            </ExternalLink>
           )}
           {meta.homepage && meta.homepage !== meta.repository && !meta.homepage.startsWith(`${meta.repository}#`) && (
-            <a href={meta.homepage} className="text-ink-2 underline decoration-line underline-offset-4 hover:text-ink">
+            <ExternalLink href={meta.homepage} icon={ICONS.globe}>
               Homepage
-            </a>
+            </ExternalLink>
           )}
+          <span className="ml-1 text-muted">Last release {formatAgo(report.releases.daysSinceLast)}</span>
         </div>
       </div>
 
@@ -202,7 +260,12 @@ export default async function PackagePage({ params }: PageProps<"/[...pkg]">) {
             </div>
             {/* Weekly, with where it's heading */}
             <div className="px-6 py-6">
-              <StatLabel color="--avg">Weekly downloads</StatLabel>
+              <StatLabel color="--avg">
+                Weekly downloads
+                <span className="text-muted/80">
+                  · {formatDay(totals.lastWeekStart, false)} – {formatDay(report.lastDay, false)}
+                </span>
+              </StatLabel>
               <div className="mt-2 flex h-12 items-end justify-between gap-3">
                 <span className="text-3xl font-bold tracking-[-0.01em] text-ink">{formatFull(totals.lastWeek)}</span>
                 <div className="shrink-0 pb-1.5">
@@ -240,10 +303,16 @@ export default async function PackagePage({ params }: PageProps<"/[...pkg]">) {
               {insights.map((line) => (
                 <p key={line}>{line}</p>
               ))}
-              {totals.gapsLastWeek > 0 && (
-                <p className="text-muted">
-                  npm has no data for {totals.gapsLastWeek} of the last 7 days, so the weekly total runs low. The trend
-                  only compares days that have data.
+              {totals.gapDatesLastWeek.length > 0 && (
+                <p className="flex items-start gap-2 pt-1 text-muted">
+                  <svg viewBox="0 0 20 20" aria-hidden className="mt-0.5 size-4 shrink-0">
+                    <circle cx="10" cy="10" r="7.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                    <path d="M10 9v4.5M10 6.5v.01" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  </svg>
+                  <span>
+                    npm is missing data for {listDays(totals.gapDatesLastWeek)}, for every package, not just this one, so
+                    this week&apos;s total runs a little low. The trend skips those days.
+                  </span>
                 </p>
               )}
             </div>
@@ -291,8 +360,22 @@ export default async function PackagePage({ params }: PageProps<"/[...pkg]">) {
           </dl>
         </Section>
 
-        <Section id="share" title="Share">
-          <SharePanel
+        {/* The main call to action: gradient frame, heading, and the pixel waves along the bottom */}
+        <section
+          id="share"
+          className="scroll-mt-6 rounded-[18px] bg-linear-to-r from-red via-accent to-yellow p-[1.5px]"
+        >
+          <div className="relative overflow-hidden rounded-2xl bg-surface">
+            <div className="relative z-10 p-5 pb-24 sm:p-8 sm:pb-28">
+              <p className="font-mono text-xs tracking-widest text-accent">SHARE CARD</p>
+              <h2 className="mt-2 text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+                Show off <span className="text-gradient break-all">{meta.name}</span>
+              </h2>
+              <p className="mt-2 max-w-xl text-sm text-ink-2">
+                A card with your live numbers, ready for socials, docs and your README.
+              </p>
+              <div className="mt-7">
+                <SharePanel
             pageUrl={pageUrl}
             cardUrl={cardUrl}
             previewSrc={cardPath(meta.name)}
@@ -300,7 +383,11 @@ export default async function PackagePage({ params }: PageProps<"/[...pkg]">) {
             downloadSquare={cardPath(meta.name, { format: "square", download: "1" })}
             name={meta.name}
           />
-        </Section>
+              </div>
+            </div>
+            <PixelSkyline rows={5} phase={37} className="pointer-events-none absolute inset-x-0 bottom-0 block h-[56px] w-full" />
+          </div>
+        </section>
 
         <p className="px-1 text-xs text-muted">
           Counts come from npm and include CI runs, mirrors and bots, so they measure installs, not people. Data runs

@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
-import { formatAgo } from "@/lib/dates";
-import { formatCompact, formatFull, formatPct } from "@/lib/format";
+import { formatDay, toDay } from "@/lib/dates";
+import { formatCompact, formatFull } from "@/lib/format";
 import { isValidPackageName } from "@/lib/npm";
 import { getReport } from "@/lib/report";
 
@@ -18,6 +18,10 @@ const C = {
   up: "#2b8a3e",
   down: "#d9342b",
 };
+
+// npm's logo mark (a square with a cut-out "n"), used to say "this is an npm package".
+const NPM_MARK =
+  "M1.763 0C.786 0 0 .786 0 1.763v20.474C0 23.214.786 24 1.763 24h20.474c.977 0 1.763-.786 1.763-1.763V1.763C24 .786 23.214 0 22.237 0zM5.13 5.323l13.837.019-.009 13.836h-3.464l.01-10.382h-3.456L12.04 19.17H5.113z";
 
 // The hero's pixel-wave palette (light theme), bottom to crest: red → orange → yellow.
 const WAVE_SOFT = ["#ffc1b6", "#ffd2a8", "#ffe6a0"];
@@ -104,7 +108,6 @@ export async function GET(request: Request, ctx: RouteContext<"/api/card/[...pkg
   const height = square ? 1080 : 630;
 
   const { meta, totals } = report;
-  const trend = totals.trendPct;
   const spark = report.sparkline.length >= 2 ? report.sparkline : null;
   const sparkW = square ? 936 : 400;
   const sparkH = square ? 260 : 170;
@@ -123,6 +126,8 @@ export async function GET(request: Request, ctx: RouteContext<"/api/card/[...pkg
   ];
 
   const nameSize = meta.name.length > 28 ? 44 : meta.name.length > 18 ? 54 : 64;
+  // Long names leave no room for the labelled badge, so it shrinks to the mark alone.
+  const compactBadge = meta.name.length + meta.version.length > (square ? 16 : 26);
   // Exact counts are the point for small packages; past a million, compact reads better and fits.
   const exactOrCompact = (n: number) => (n >= 1_000_000 ? formatCompact(n) : formatFull(n));
   const total = exactOrCompact(totals.allTime);
@@ -135,29 +140,16 @@ export async function GET(request: Request, ctx: RouteContext<"/api/card/[...pkg
         <div style={{ fontSize: totalSize, fontWeight: 800, letterSpacing: -4, lineHeight: 1 }}>{total}</div>
       </div>
       <div style={{ display: "flex", marginTop: 12, fontSize: 28, color: C.ink2 }}>downloads all time</div>
-      <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 18, fontSize: 24 }}>
-        <span style={{ display: "flex", color: C.ink, fontWeight: 600 }}>{weekly} this week</span>
-        {trend !== null && (
-          <span
-            style={{
-              display: "flex",
-              padding: "4px 14px",
-              borderRadius: 999,
-              background: trend >= 0 ? "rgba(43,138,62,0.12)" : "rgba(217,52,43,0.12)",
-              color: trend >= 0 ? C.up : C.down,
-              fontWeight: 600,
-              alignItems: "center",
-            }}
-          >
-            {trend !== 0 && (
-              // The card fonts have no ▲/▼ glyphs, so the arrow is drawn.
-              <svg width="18" height="16" viewBox="0 0 18 16" style={{ marginRight: 10 }}>
-                <path d={trend > 0 ? "M9 1 17 15H1Z" : "M9 15 1 1h16Z"} fill="currentColor" />
-              </svg>
-            )}
-            {formatPct(trend)}
-          </span>
-        )}
+      <div style={{ display: "flex", alignItems: "center", marginTop: 18, fontSize: 24, color: C.ink2 }}>
+        <span style={{ display: "flex", gap: 7 }}>
+          <span style={{ color: C.ink, fontWeight: 600 }}>{weekly}</span>
+          in the last 7 days
+        </span>
+        <span style={{ display: "flex", margin: "0 14px", color: C.muted }}>·</span>
+        <span style={{ display: "flex", gap: 7 }}>
+          <span style={{ color: C.ink, fontWeight: 600 }}>{exactOrCompact(totals.lastMonth)}</span>
+          in 30 days
+        </span>
       </div>
     </div>
   );
@@ -205,6 +197,26 @@ export async function GET(request: Request, ctx: RouteContext<"/api/card/[...pkg
                 v{meta.version}
               </span>
             </div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                flexShrink: 0,
+                padding: compactBadge ? 0 : "8px 16px 8px 8px",
+                borderRadius: 14,
+                border: compactBadge ? "none" : `2px solid ${C.line}`,
+                background: compactBadge ? "transparent" : C.surface,
+                fontSize: 22,
+                fontWeight: 600,
+                color: C.ink2,
+              }}
+            >
+              <svg width={compactBadge ? 52 : 40} height={compactBadge ? 52 : 40} viewBox="0 0 24 24">
+                <path d={NPM_MARK} fill="#cb3837" />
+              </svg>
+              {!compactBadge && "npm package"}
+            </div>
           </div>
           {meta.description && (
             <div style={{ display: "flex", marginTop: 14, fontSize: 26, color: C.muted, maxWidth: 1000 }}>
@@ -237,7 +249,7 @@ export async function GET(request: Request, ctx: RouteContext<"/api/card/[...pkg
           }}
         >
           <span>
-            {exactOrCompact(totals.lastMonth)} in the last 30 days · released {formatAgo(report.releases.daysSinceLast)}
+            Generated {formatDay(toDay(new Date()))} · npm data through {formatDay(report.lastDay)}
           </span>
           <span style={{ color: C.accent, fontWeight: 800 }}>shipstat</span>
         </div>

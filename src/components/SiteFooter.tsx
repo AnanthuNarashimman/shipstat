@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { LogoMark } from "./Logo";
+import { PixelSkyline } from "./PixelSkyline";
 import { ThemeToggle } from "./ThemeToggle";
 
 const REPO = "https://github.com/AnanthuNarashimman/shipstat";
@@ -32,51 +33,11 @@ const COLUMNS: { title: string; links: { label: string; href: string; external?:
   },
 ];
 
-// Stable pseudo-random value per cell (same idea as the hero canvas).
-function hash(x: number, y: number, seed: number): number {
-  const v = Math.sin(x * 127.1 + y * 311.7 + seed * 74.7) * 43758.5453;
-  return v - Math.floor(v);
-}
-
-// A still frame of the hero's pixel waves, rising out of the page onto the footer's top edge.
-// Same wave shape, dithered crest and red → orange → yellow bands; generated once on the server.
-function PixelSkyline() {
-  const cols = 160;
-  const rows = 7;
-  const size = 10;
-  const pitch = 12;
-  const rects: { x: number; y: number; fill: string }[] = [];
-  for (let i = 0; i < cols; i++) {
-    const wave = 0.46 + 0.2 * Math.sin(i * 0.11) + 0.12 * Math.sin(i * 0.043 + 1.3) + 0.06 * Math.sin(i * 0.31);
-    const h = wave * rows;
-    const full = Math.floor(h);
-    for (let j = 0; j <= full; j++) {
-      if (j === full && hash(i, j, 1) > h - full) continue;
-      const depth = j / Math.max(1, h);
-      const band = depth < 0.34 ? "red" : depth < 0.72 ? "orange" : "yellow";
-      const strong = hash(i, j, 8) < 0.06 + depth * 0.1;
-      rects.push({ x: i * pitch, y: (rows - 1 - j) * pitch, fill: `var(--wave-${band}${strong ? "-strong" : ""})` });
-    }
-  }
-  return (
-    <svg
-      aria-hidden
-      viewBox={`0 0 ${cols * pitch - (pitch - size)} ${rows * pitch - (pitch - size)}`}
-      preserveAspectRatio="xMidYMax slice"
-      className="block h-[80px] w-full"
-    >
-      {rects.map((r) => (
-        <rect key={`${r.x}-${r.y}`} x={r.x} y={r.y} width={size} height={size} style={{ fill: r.fill }} />
-      ))}
-    </svg>
-  );
-}
-
 export function SiteFooter() {
   return (
     <>
       <div className="mt-16">
-        <PixelSkyline />
+        <PixelSkyline className="block h-[80px] w-full" />
       </div>
       <footer className="relative overflow-hidden border-t border-line bg-surface">
 
