@@ -12,6 +12,7 @@ type Props = {
   start: string;
   counts: (number | null)[];
   releases: Release[]; // stable releases, oldest first
+  compact?: boolean; // hides the table view, for previews
 };
 
 const RANGES = [
@@ -48,7 +49,7 @@ function barPath(x: number, y: number, w: number, h: number): string {
   return `M${x},${y + h}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h}Z`;
 }
 
-export function DownloadsChart({ start, counts, releases }: Props) {
+export function DownloadsChart({ start, counts, releases, compact = false }: Props) {
   const enabled = (i: number) => i === 0 || counts.length > RANGES[i - 1].days;
   const [range, setRange] = useState<RangeKey>(enabled(1) ? "90d" : "30d");
   const [hover, setHover] = useState<number | null>(null);
@@ -243,7 +244,7 @@ export function DownloadsChart({ start, counts, releases }: Props) {
         )}
         {markerReleases.length > 0 && (
           <span className="flex items-center gap-1.5">
-            <span className="inline-block h-3 w-px bg-clay" /> Release
+            <span className="inline-block h-3 w-px bg-marker" /> Release
           </span>
         )}
         {view.gapDays > 0 && (
@@ -297,13 +298,13 @@ export function DownloadsChart({ start, counts, releases }: Props) {
                 x2={r.x}
                 y1={M.top - 6}
                 y2={M.top + innerH}
-                stroke="var(--clay)"
+                stroke="var(--marker)"
                 strokeWidth={1}
                 opacity={0.55}
               />
               {r.labeled && (
                 <>
-                  <circle cx={r.x} cy={M.top - 6} r={3} fill="var(--clay)" stroke="var(--surface)" strokeWidth={2} />
+                  <circle cx={r.x} cy={M.top - 6} r={3} fill="var(--marker)" stroke="var(--surface)" strokeWidth={2} />
                   <text x={r.x} y={M.top - 14} textAnchor="middle" fontSize={10.5} fill="var(--ink-2)">
                     {r.version}
                   </text>
@@ -403,7 +404,7 @@ export function DownloadsChart({ start, counts, releases }: Props) {
 
         {hovered && (
           <div
-            className="pointer-events-none absolute top-2 z-10 min-w-40 rounded-lg border border-line bg-surface px-3 py-2.5 text-xs shadow-[0_8px_24px_-12px_rgb(0_0_0/0.2)]"
+            className="pointer-events-none absolute top-2 z-10 min-w-40 rounded-lg border border-line bg-surface px-3 py-2.5 text-xs"
             style={
               xPoint(hovered) > width / 2
                 ? { right: width - xPoint(hovered) + 12 }
@@ -437,7 +438,7 @@ export function DownloadsChart({ start, counts, releases }: Props) {
             )}
             {hoveredReleases.length > 0 && (
               <div className="mt-1.5 flex items-center gap-1.5 border-t border-line pt-1.5 text-ink-2">
-                <span className="inline-block h-3 w-px bg-clay" />
+                <span className="inline-block h-3 w-px bg-marker" />
                 Released {hoveredReleases.map((r) => r.version).join(", ")}
               </div>
             )}
@@ -445,6 +446,7 @@ export function DownloadsChart({ start, counts, releases }: Props) {
         )}
       </div>
 
+      {!compact && (
       <details className="mt-4 text-sm">
         <summary className="cursor-pointer text-muted hover:text-ink-2">Show as table</summary>
         <div className="mt-3 max-h-72 overflow-auto rounded-lg border border-line">
@@ -479,6 +481,7 @@ export function DownloadsChart({ start, counts, releases }: Props) {
           </table>
         </div>
       </details>
+      )}
     </section>
   );
 }

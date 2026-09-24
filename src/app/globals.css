@@ -1,40 +1,94 @@
 @import "tailwindcss";
 
-/* Scandinavian: warm paper, charcoal ink, hairlines, one calm blue, clay for events. */
+/* Dark mode follows the theme toggle (data-theme on <html>), never the OS. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* Warm and energetic: cream paper, warm ink, orange as the brand and data colour,
+   red and yellow as supporting accents. No glows: depth comes from hairlines and fills. */
 :root {
-  --bg: #f6f4ef;
+  --bg: #fffaf5;
   --surface: #ffffff;
-  --sunken: #efece6;
-  --ink: #1f2326;
-  --ink-2: #4a5056;
-  --muted: #7d8287;
-  --line: #e4e0d8;
-  --grid: #eeebe5;
-  --accent: #2b6ca3;
-  --accent-wash: rgb(43 108 163 / 0.1);
-  --accent-soft: #a9c4db;
-  --clay: #c0612f;
-  --up: #3d7a57;
-  --down: #a4513a;
+  --sunken: #fff1e5;
+  --ink: #231a15;
+  --ink-2: #5c4b42;
+  --muted: #7d6c63;
+  --line: #f1e1d2;
+  --grid: #f6ebe1;
+  --dot: #e8d3c1;
+
+  /* data + brand */
+  --accent: #e8590c; /* validated: chart series on white */
+  --accent-soft: #fdc39b; /* daily bars, under the accent average line */
+  --accent-wash: rgb(232 89 12 / 0.1);
+  --marker: #5c4b42; /* release markers: neutral so they never compete with the series */
+
+  /* supporting accents */
+  --red: #e03a2f;
+  --red-wash: #ffe4df;
+  --yellow: #ffc83d;
+  --yellow-wash: #fff1c2;
+  --orange-wash: #ffe8d6;
+  --amber: #b7791f; /* yellow family, dark enough for icons on light surfaces */
+
+  /* calls to action: bright red-orange → orange with bold white text (3.2–3.8:1, the large-bold-text bar) */
+  --cta-from: #ec4a30;
+  --cta-to: #f26522;
+  --cta-ink: #ffffff;
+
+  --up: #2b8a3e;
+  --down: #d9342b;
+
+  /* hero pixels: soft tints with the odd saturated pixel, bottom to crest red → orange → yellow */
+  --wave-red: #ffc1b6;
+  --wave-orange: #ffd2a8;
+  --wave-yellow: #ffe6a0;
+  --wave-red-strong: #ff7a66;
+  --wave-orange-strong: #ff9a3d;
+  --wave-yellow-strong: #ffc83d;
+
+  color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #161819;
-    --surface: #1c1f22;
-    --sunken: #222629;
-    --ink: #ecebe7;
-    --ink-2: #bdbab4;
-    --muted: #8d8a85;
-    --line: #2e3236;
-    --grid: #272b2e;
-    --accent: #4f8bc4;
-    --accent-wash: rgb(79 139 196 / 0.12);
-    --accent-soft: #3a5d7e;
-    --clay: #d07a4a;
-    --up: #79b690;
-    --down: #d98e78;
-  }
+/* Dark is a warm dusk rather than flat brown-black: plum-tinted surfaces that make the
+   red / orange / yellow read as colour instead of disappearing into one tone. */
+:root[data-theme="dark"] {
+  --bg: #15111a;
+  --surface: #1d1823;
+  --sunken: #272030;
+  --ink: #faf0ea;
+  --ink-2: #d4c6cf;
+  --muted: #a1929c;
+  --line: #342b3d;
+  --grid: #231c2b;
+  --dot: #3f344a;
+
+  --accent: #e8621a; /* validated: chart series on the dark surface */
+  --accent-soft: #8a3d1c;
+  --accent-wash: rgb(232 98 26 / 0.16);
+  --marker: #d4c6cf;
+
+  --red: #ff6b5e;
+  --red-wash: #3d1d27;
+  --yellow: #ffc83d;
+  --yellow-wash: #3f3218;
+  --orange-wash: #3d2419;
+  --amber: #ffc83d;
+
+  --cta-from: #ec4a30;
+  --cta-to: #f26522;
+  --cta-ink: #ffffff;
+
+  --up: #5cc27a;
+  --down: #ff6b5e;
+
+  --wave-red: #5c2331;
+  --wave-orange: #62311d;
+  --wave-yellow: #5b4718;
+  --wave-red-strong: #ff6b5e;
+  --wave-orange-strong: #ff8a3d;
+  --wave-yellow-strong: #ffc83d;
+
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -47,30 +101,134 @@
   --color-line: var(--line);
   --color-grid: var(--grid);
   --color-accent: var(--accent);
-  --color-accent-wash: var(--accent-wash);
   --color-accent-soft: var(--accent-soft);
-  --color-clay: var(--clay);
+  --color-accent-wash: var(--accent-wash);
+  --color-marker: var(--marker);
+  --color-red: var(--red);
+  --color-red-wash: var(--red-wash);
+  --color-yellow: var(--yellow);
+  --color-yellow-wash: var(--yellow-wash);
+  --color-orange-wash: var(--orange-wash);
+  --color-amber: var(--amber);
+  --color-cta-from: var(--cta-from);
+  --color-cta-to: var(--cta-to);
+  --color-cta-ink: var(--cta-ink);
   --color-up: var(--up);
   --color-down: var(--down);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-google-sans), system-ui, sans-serif;
+  --font-display: var(--font-google-sans), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
 }
 
-html {
-  color-scheme: light dark;
-}
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
 
-body {
-  background: var(--bg);
-  color: var(--ink);
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-google-sans), system-ui, sans-serif;
+  }
+
+  /* In the base layer so a component's own outline-none (e.g. an input inside a bordered box) wins. */
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
 }
 
 ::selection {
-  background: var(--accent-wash);
+  background: var(--yellow);
+  color: #231a15;
 }
 
-:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+/* Gradient headline text is transparent (the gradient shows through), which made a selection look empty.
+   While selected, paint the glyphs solid again. */
+.text-gradient {
+  background-image: linear-gradient(90deg, var(--red), var(--accent));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.text-gradient::selection {
+  -webkit-text-fill-color: #231a15;
+  background: var(--yellow);
+}
+
+/* Hero backdrop: a fine dot grid, fading out toward the edges. */
+.hero-dots {
+  background-image: radial-gradient(circle, var(--dot) 1.1px, transparent 1.5px);
+  background-size: 22px 22px;
+  background-position: center top;
+  mask-image: radial-gradient(ellipse 70% 75% at 50% 42%, black 30%, transparent 100%);
+}
+
+/* Primary button: red → orange, white text. */
+.btn-cta {
+  background-image: linear-gradient(100deg, var(--cta-from), var(--cta-to));
+  color: var(--cta-ink);
+  transition: filter 0.2s ease, transform 0.2s ease;
+}
+.btn-cta:hover {
+  filter: brightness(1.08) saturate(1.05);
+}
+.btn-cta:active {
+  transform: translateY(1px);
+}
+
+/* Theme switch: the new theme spreads in a circle from the toggle (see ThemeToggle). */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-new(root) {
+  animation: theme-reveal 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+}
+@keyframes theme-reveal {
+  from {
+    clip-path: circle(0 at var(--theme-x, 50%) var(--theme-y, 0));
+  }
+  to {
+    clip-path: circle(var(--theme-r, 150vmax) at var(--theme-x, 50%) var(--theme-y, 0));
+  }
+}
+/* Browsers without view transitions: a short colour cross-fade instead. */
+html.theme-fading,
+html.theme-fading * {
+  transition:
+    background-color 0.35s ease,
+    border-color 0.35s ease,
+    color 0.35s ease !important;
+}
+
+/* Scroll reveal. Hidden only when scripts run, so the page reads fine without JavaScript. */
+@media (scripting: enabled) {
+  [data-reveal] {
+    opacity: 0;
+    transform: translateY(18px);
+    transition:
+      opacity 0.7s cubic-bezier(0.2, 0.7, 0.2, 1),
+      transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
+    transition-delay: var(--reveal-delay, 0ms);
+  }
+  [data-reveal][data-shown] {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal] {
+    transform: none !important;
+    transition: opacity 0.3s ease !important;
+  }
+  ::view-transition-new(root) {
+    animation: none;
+  }
 }

@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { after } from "next/server";
 
 import { DownloadsChart } from "@/components/DownloadsChart";
+import { Logo } from "@/components/Logo";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { ReleaseList } from "@/components/ReleaseList";
 import { SearchBox } from "@/components/SearchBox";
 import { SharePanel } from "@/components/SharePanel";
@@ -64,9 +65,19 @@ export async function generateMetadata({ params }: PageProps<"/[...pkg]">): Prom
   };
 }
 
-function Section({ title, note, children }: { title: string; note?: string | null; children: React.ReactNode }) {
+function Section({
+  id,
+  title,
+  note,
+  children,
+}: {
+  id?: string;
+  title: string;
+  note?: string | null;
+  children: React.ReactNode;
+}) {
   return (
-    <section className="rounded-2xl border border-line bg-surface p-5 sm:p-7">
+    <section id={id} className="scroll-mt-6 rounded-2xl border border-line bg-surface p-5 sm:p-7">
       <h2 className="text-sm font-medium text-ink-2">{title}</h2>
       {note && <p className="mt-1 text-sm text-muted">{note}</p>}
       <div className="mt-5">{children}</div>
@@ -109,18 +120,17 @@ export default async function PackagePage({ params }: PageProps<"/[...pkg]">) {
   return (
     <main className="mx-auto max-w-5xl px-4 pb-8 sm:px-6">
       <header className="flex items-center gap-4 py-5">
-        <Link href="/" className="shrink-0 text-sm font-medium tracking-wide text-accent">
-          shipstat
-        </Link>
-        <div className="ml-auto w-full max-w-xs">
+        <Logo size="sm" />
+        <div className="ml-auto flex w-full max-w-sm items-center gap-2">
           <SearchBox size="sm" />
+          <ThemeToggle />
         </div>
       </header>
 
       {/* Package header */}
       <div className="pt-8 pb-10">
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-2">
-          <h1 className="break-all text-3xl font-semibold tracking-tight text-ink sm:text-4xl">{meta.name}</h1>
+          <h1 className="break-all font-display text-3xl font-semibold tracking-tight text-ink sm:text-4xl">{meta.name}</h1>
           <span className="rounded-md bg-sunken px-2 py-0.5 font-mono text-sm text-ink-2">v{meta.version}</span>
           {meta.license && <span className="text-sm text-muted">{meta.license}</span>}
         </div>
@@ -155,7 +165,7 @@ export default async function PackagePage({ params }: PageProps<"/[...pkg]">) {
             <div className="flex items-end justify-between gap-4 px-5 py-5 sm:px-7">
               <div>
                 <span className="text-xs text-muted">Weekly downloads</span>
-                <div className="mt-1 text-5xl font-semibold tracking-tight text-ink">{formatFull(totals.lastWeek)}</div>
+                <div className="mt-1 text-5xl font-semibold tracking-[-0.01em] text-ink">{formatFull(totals.lastWeek)}</div>
                 <div className="mt-2 text-sm">
                   {trend === null ? (
                     <span className="text-muted">Not enough data for a trend yet</span>
@@ -200,7 +210,7 @@ export default async function PackagePage({ params }: PageProps<"/[...pkg]">) {
           )}
         </div>
 
-        <section className="rounded-2xl border border-line bg-surface p-5 sm:p-7">
+        <section id="downloads" className="scroll-mt-6 rounded-2xl border border-line bg-surface p-5 sm:p-7">
           {report.daily.counts.length > 0 ? (
             <DownloadsChart
               start={report.daily.start}
@@ -216,10 +226,10 @@ export default async function PackagePage({ params }: PageProps<"/[...pkg]">) {
         </section>
 
         <div className="grid gap-5 md:grid-cols-[1.5fr_1fr]">
-          <Section title="Version adoption, last 7 days" note={adoptionInsight(report)}>
+          <Section id="versions" title="Version adoption, last 7 days" note={adoptionInsight(report)}>
             <VersionAdoption versions={report.versions} latest={meta.version} />
           </Section>
-          <Section title="Releases" note={releaseInsight(report)}>
+          <Section id="releases" title="Releases" note={releaseInsight(report)}>
             <ReleaseList releases={meta.releases} />
           </Section>
         </div>
@@ -241,7 +251,7 @@ export default async function PackagePage({ params }: PageProps<"/[...pkg]">) {
           </dl>
         </Section>
 
-        <Section title="Share">
+        <Section id="share" title="Share">
           <SharePanel pageUrl={pageUrl} cardUrl={cardUrl} cardPath={`/api/card${packagePath(meta.name)}`} name={meta.name} />
         </Section>
 

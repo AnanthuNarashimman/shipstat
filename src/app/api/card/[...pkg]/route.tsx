@@ -6,23 +6,27 @@ import { isValidPackageName } from "@/lib/npm";
 import { getReport } from "@/lib/report";
 
 const C = {
-  bg: "#f6f4ef",
+  bg: "#fffaf5",
   surface: "#ffffff",
-  ink: "#1f2326",
-  ink2: "#4a5056",
-  muted: "#7d8287",
-  line: "#e4e0d8",
-  accent: "#2b6ca3",
-  wash: "rgba(43,108,163,0.10)",
-  up: "#3d7a57",
-  down: "#a4513a",
+  ink: "#231a15",
+  ink2: "#5c4b42",
+  muted: "#7d6c63",
+  line: "#f1e1d2",
+  accent: "#e8590c",
+  red: "#e03a2f",
+  wash: "rgba(232,89,12,0.10)",
+  up: "#2b8a3e",
+  down: "#d9342b",
 };
 
+// Same pixel palette as the hero waves, shown beside the wordmark.
+const PIXELS = ["#ffc1b6", "#ff7a66", "#ffd2a8", "#ff9a3d", "#ffe6a0", "#ffc83d"];
+
 // Google Fonts serves TTF (which the image renderer needs) when no browser user agent is sent.
-async function loadFont(weight: number): Promise<ArrayBuffer | null> {
+async function loadFont(family: string, weight: number): Promise<ArrayBuffer | null> {
   try {
     const css = await (
-      await fetch(`https://fonts.googleapis.com/css2?family=Geist:wght@${weight}`, { cache: "force-cache" })
+      await fetch(`https://fonts.googleapis.com/css2?family=${family.replace(/ /g, "+")}:wght@${weight}`, { cache: "force-cache" })
     ).text();
     const url = css.match(/src: url\((.+?)\) format\('(?:truetype|opentype)'\)/)?.[1];
     if (!url) return null;
@@ -71,10 +75,15 @@ export async function GET(request: Request, ctx: RouteContext<"/api/card/[...pkg
   const sparkH = square ? 260 : 170;
   const path = spark ? sparkPath(spark, sparkW, sparkH) : null;
 
-  const [regular, semibold] = await Promise.all([loadFont(400), loadFont(600)]);
+  const [regular, semibold, display] = await Promise.all([
+    loadFont("Google Sans", 400),
+    loadFont("Google Sans", 600),
+    loadFont("Google Sans", 700),
+  ]);
   const fonts = [
-    ...(regular ? [{ name: "Geist", data: regular, weight: 400 as const, style: "normal" as const }] : []),
-    ...(semibold ? [{ name: "Geist", data: semibold, weight: 600 as const, style: "normal" as const }] : []),
+    ...(regular ? [{ name: "Google Sans", data: regular, weight: 400 as const, style: "normal" as const }] : []),
+    ...(semibold ? [{ name: "Google Sans", data: semibold, weight: 600 as const, style: "normal" as const }] : []),
+    ...(display ? [{ name: "Google Sans", data: display, weight: 800 as const, style: "normal" as const }] : []),
   ];
 
   const nameSize = meta.name.length > 28 ? 44 : meta.name.length > 18 ? 54 : 64;
@@ -85,7 +94,7 @@ export async function GET(request: Request, ctx: RouteContext<"/api/card/[...pkg
   const headline = (
     <div style={{ display: "flex", flexDirection: "column" }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 18 }}>
-        <div style={{ fontSize: weeklySize, fontWeight: 600, letterSpacing: -5, lineHeight: 1 }}>{weekly}</div>
+        <div style={{ fontSize: weeklySize, fontWeight: 800, letterSpacing: -4, lineHeight: 1 }}>{weekly}</div>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 14, fontSize: 28 }}>
         <span style={{ color: C.ink2 }}>weekly downloads</span>
@@ -95,12 +104,18 @@ export async function GET(request: Request, ctx: RouteContext<"/api/card/[...pkg
               display: "flex",
               padding: "4px 14px",
               borderRadius: 999,
-              background: trend >= 0 ? "rgba(61,122,87,0.12)" : "rgba(164,81,58,0.12)",
+              background: trend >= 0 ? "rgba(43,138,62,0.12)" : "rgba(217,52,43,0.12)",
               color: trend >= 0 ? C.up : C.down,
               fontWeight: 600,
+              alignItems: "center",
             }}
           >
-            {trend > 0 ? "▲ " : trend < 0 ? "▼ " : ""}
+            {trend !== 0 && (
+              // The card fonts have no ▲/▼ glyphs, so the arrow is drawn.
+              <svg width="18" height="16" viewBox="0 0 18 16" style={{ marginRight: 10 }}>
+                <path d={trend > 0 ? "M9 1 17 15H1Z" : "M9 15 1 1h16Z"} fill="currentColor" />
+              </svg>
+            )}
             {formatPct(trend)}
           </span>
         )}
@@ -128,13 +143,13 @@ export async function GET(request: Request, ctx: RouteContext<"/api/card/[...pkg
           padding: square ? 72 : 64,
           background: C.bg,
           color: C.ink,
-          fontFamily: "Geist",
+          fontFamily: "Google Sans",
         }}
       >
         <div style={{ display: "flex", flexDirection: "column" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-              <span style={{ fontSize: nameSize, fontWeight: 600, letterSpacing: -1.5 }}>{meta.name}</span>
+              <span style={{ fontSize: nameSize, fontWeight: 800, letterSpacing: -2 }}>{meta.name}</span>
               <span
                 style={{
                   display: "flex",
@@ -183,7 +198,14 @@ export async function GET(request: Request, ctx: RouteContext<"/api/card/[...pkg
           <span>
             {formatCompact(totals.allTime)} all time · released {formatAgo(report.releases.daysSinceLast)}
           </span>
-          <span style={{ color: C.accent, fontWeight: 600 }}>shipstat</span>
+          <span style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <span style={{ display: "flex", gap: 4 }}>
+              {PIXELS.map((c) => (
+                <span key={c} style={{ width: 14, height: 14, background: c }} />
+              ))}
+            </span>
+            <span style={{ color: C.accent, fontWeight: 800 }}>shipstat</span>
+          </span>
         </div>
       </div>
     ),
