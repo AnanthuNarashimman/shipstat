@@ -58,13 +58,14 @@ shipstat shows only what npm actually reports, and explains what the numbers mea
 Every package gets its own card. Paste a shipstat link on X, LinkedIn, Slack or Discord and it unfurls by
 itself. The card also downloads as a PNG, wide or square.
 
-Each card leads with all-time downloads, adds the last 7 and 30 days and a 12-week sparkline, and is marked as an
-npm package. Since the numbers change, every card says when it was generated and how far npm's data goes.
+Each card leads with all-time downloads, adds the last 7 and 30 days and a 12-week sparkline, is marked as an npm
+package, and credits the developer, with their name and GitHub avatar. Since the numbers change, every card says
+when it was generated and how far npm's data goes.
 
 <p align="center">
-  <img src="docs/images/card-wide.png" alt="Wide share card for react: 11.3B downloads all time, 133M in the last 7 days, 633M in 30 days, generated Sep 24, 2026 with npm data through Sep 21, 2026" width="64%">
+  <img src="docs/images/card-wide.png" alt="Wide share card for react, by react: 11.3B downloads all time, 133M in the last 7 days, 633M in 30 days, generated Sep 24, 2026 with npm data through Sep 21, 2026" width="64%">
   &nbsp;
-  <img src="docs/images/card-square.png" alt="Square share card for zod: 8.94B downloads all time" width="33.5%">
+  <img src="docs/images/card-square.png" alt="Square share card for zod, by Colin McDonnell: 8.94B downloads all time" width="33.5%">
 </p>
 
 Put it in your README with one line:
