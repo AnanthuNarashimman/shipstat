@@ -1,6 +1,6 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/images/landing-dark.png">
+    <source media="(prefers-color-scheme: light)" srcset="docs/images/landing-dark.png">
     <img src="docs/images/landing-light.png" alt="shipstat: see how your npm package is really shipping" width="100%">
   </picture>
 </p>
