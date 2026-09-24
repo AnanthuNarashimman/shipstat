@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import { notFound, permanentRedirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { after } from "next/server";
 
 import { DownloadsChart } from "@/components/DownloadsChart";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { RedirectTo } from "@/components/RedirectTo";
 import { ReleaseList } from "@/components/ReleaseList";
 import { SearchBox } from "@/components/SearchBox";
 import { PixelSkyline } from "@/components/PixelSkyline";
@@ -40,15 +41,16 @@ async function findReport(name: string): Promise<Report | null> {
   return getReport(name.toLowerCase());
 }
 
-async function load(segments: string[]): Promise<Report> {
+// Either the report, or where to send someone who typed "Tracetel" for "tracetel".
+async function load(segments: string[]): Promise<Report | { redirectTo: string }> {
   const name = nameFrom(segments);
   if (!isValidPackageName(name)) notFound();
   const report = await getReport(name);
   if (report) return report;
-  // Typed "Tracetel" but the package is "tracetel": redirect as soon as a quick check confirms the
-  // lowercase package exists, rather than after building its whole report.
+  // Redirect as soon as a quick check confirms the lowercase package exists, rather than after building
+  // its whole report.
   const lower = name.toLowerCase();
-  if (lower !== name && (await packageExists(lower))) permanentRedirect(packagePath(lower));
+  if (lower !== name && (await packageExists(lower))) return { redirectTo: packagePath(lower) };
   notFound();
 }
 
@@ -265,7 +267,10 @@ function Fact({ label, children }: { label: string; children: React.ReactNode })
 
 export default async function PackagePage({ params }: PageProps<"/[...pkg]">) {
   const { pkg } = await params;
-  const report = await load(pkg);
+  const result = await load(pkg);
+  // Not a thrown redirect: that would flash an empty page while the stream switches over.
+  if ("redirectTo" in result) return <RedirectTo href={result.redirectTo} />;
+  const report = result;
   const { meta, totals } = report;
 
   after(() => recordLookup(meta.name));
