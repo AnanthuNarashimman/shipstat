@@ -16,7 +16,7 @@ import { formatBytes, formatCompact, formatFull, formatPct } from "@/lib/format"
 import { adoptionInsight, patternInsight, releaseInsight, trendInsight } from "@/lib/insights";
 import { isValidPackageName } from "@/lib/npm";
 import { getReport, type Report } from "@/lib/report";
-import { packagePath, siteUrl } from "@/lib/site";
+import { cardPath, packagePath, siteUrl } from "@/lib/site";
 
 // Pages render on first visit and are cached; npm data is refreshed at most every 6 hours.
 export const revalidate = 21600;
@@ -48,8 +48,8 @@ export async function generateMetadata({ params }: PageProps<"/[...pkg]">): Prom
 
   const { totals, meta } = report;
   const trend = totals.trendPct === null ? "" : ` (${formatPct(totals.trendPct)} vs last week)`;
-  const description = `${formatFull(totals.lastWeek)} weekly downloads${trend}. v${meta.version}, ${formatCompact(totals.allTime)} downloads all time.`;
-  const card = `/api/card${packagePath(meta.name)}`;
+  const description = `${formatFull(totals.allTime)} downloads all time. ${formatFull(totals.lastWeek)} in the last week${trend}. v${meta.version}.`;
+  const card = cardPath(meta.name);
 
   return {
     title: `${meta.name} npm downloads`,
@@ -85,12 +85,23 @@ function Section({
   );
 }
 
-function Stat({ label, value, sub }: { label: string; value: string; sub?: React.ReactNode }) {
+function StatLabel({ color, children }: { color: string; children: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-1 px-5 py-4 sm:px-6">
-      <span className="text-xs text-muted">{label}</span>
-      <span className="text-xl font-semibold tracking-tight text-ink">{value}</span>
-      {sub && <span className="text-xs text-muted">{sub}</span>}
+    <span className="flex items-center gap-1.5 text-xs text-muted">
+      <span aria-hidden className="size-2 rounded-[2px]" style={{ background: `var(${color})` }} />
+      {children}
+    </span>
+  );
+}
+
+function Stat({ label, color, value, sub }: { label: string; color: string; value: string; sub?: React.ReactNode }) {
+  return (
+    <div className="px-6 py-6">
+      <StatLabel color={color}>{label}</StatLabel>
+      <div className="mt-2 flex h-12 items-end">
+        <span className="text-3xl font-bold tracking-[-0.01em] text-ink">{value}</span>
+      </div>
+      {sub && <div className="mt-2 text-sm text-muted">{sub}</div>}
     </div>
   );
 }
@@ -112,24 +123,43 @@ export default async function PackagePage({ params }: PageProps<"/[...pkg]">) {
   after(() => recordLookup(meta.name));
 
   const pageUrl = `${siteUrl}${packagePath(meta.name)}`;
-  const cardUrl = `${siteUrl}/api/card${packagePath(meta.name)}`;
+  const cardUrl = `${siteUrl}${cardPath(meta.name)}`;
   const trend = totals.trendPct;
   const insights = [trendInsight(report), patternInsight(report)].filter(Boolean);
   const npmUrl = `https://www.npmjs.com/package/${meta.name}`;
 
   return (
+    <>
+    <header className="border-b border-line">
+      <div className="mx-auto flex max-w-5xl items-center gap-4 px-4 py-4 sm:px-6">
+          <Logo size="sm" />
+          <div className="ml-auto flex w-full max-w-sm items-center gap-2">
+            <SearchBox size="sm" />
+            <ThemeToggle />
+          </div>
+      </div>
+    </header>
     <main className="mx-auto max-w-5xl px-4 pb-8 sm:px-6">
-      <header className="flex items-center gap-4 py-5">
-        <Logo size="sm" />
-        <div className="ml-auto flex w-full max-w-sm items-center gap-2">
-          <SearchBox size="sm" />
-          <ThemeToggle />
-        </div>
-      </header>
 
       {/* Package header */}
-      <div className="pt-8 pb-10">
-        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-2">
+      <div className="relative pt-8 pb-10">
+        <a
+          href="#share"
+          className="btn-cta mb-5 inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold sm:absolute sm:top-8 sm:right-0 sm:mb-0"
+        >
+          <svg viewBox="0 0 20 20" aria-hidden className="size-4">
+            <path
+              d="M10 12.5V3m0 0L6.5 6.5M10 3l3.5 3.5M4 10.5v5A1.5 1.5 0 0 0 5.5 17h9a1.5 1.5 0 0 0 1.5-1.5v-5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          Share
+        </a>
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-2 sm:pr-32">
           <h1 className="break-all font-display text-3xl font-semibold tracking-tight text-ink sm:text-4xl">{meta.name}</h1>
           <span className="rounded-md bg-sunken px-2 py-0.5 font-mono text-sm text-ink-2">v{meta.version}</span>
           {meta.license && <span className="text-sm text-muted">{meta.license}</span>}
@@ -161,36 +191,46 @@ export default async function PackagePage({ params }: PageProps<"/[...pkg]">) {
       <div className="space-y-5">
         {/* Headline numbers */}
         <div className="overflow-hidden rounded-2xl border border-line bg-surface">
-          <div className="grid sm:grid-cols-[1.4fr_1fr_1fr_1fr] sm:divide-x sm:divide-line max-sm:divide-y max-sm:divide-line">
-            <div className="flex items-end justify-between gap-4 px-5 py-5 sm:px-7">
-              <div>
-                <span className="text-xs text-muted">Weekly downloads</span>
-                <div className="mt-1 text-5xl font-semibold tracking-[-0.01em] text-ink">{formatFull(totals.lastWeek)}</div>
-                <div className="mt-2 text-sm">
-                  {trend === null ? (
-                    <span className="text-muted">Not enough data for a trend yet</span>
-                  ) : (
-                    <>
-                      <span className={trend > 0 ? "text-up" : trend < 0 ? "text-down" : "text-ink-2"}>
-                        {trend > 0 ? "▲" : trend < 0 ? "▼" : ""} {formatPct(trend)}
-                      </span>
-                      <span className="text-muted"> vs previous week</span>
-                    </>
-                  )}
+          <div className="grid sm:grid-cols-2 sm:divide-line max-sm:divide-y max-sm:divide-line lg:grid-cols-[1.35fr_1.25fr_1fr_1fr] lg:divide-x">
+            {/* Primary: everything the package has done */}
+            <div className="px-6 py-6">
+              <StatLabel color="--accent">All-time downloads</StatLabel>
+              <div className="mt-2 flex h-12 items-end">
+                <span className="text-5xl leading-none font-bold tracking-[-0.02em] text-ink">{formatFull(totals.allTime)}</span>
+              </div>
+              <div className="mt-2 text-sm text-muted">since {formatDay(report.daily.start)}</div>
+            </div>
+            {/* Weekly, with where it's heading */}
+            <div className="px-6 py-6">
+              <StatLabel color="--avg">Weekly downloads</StatLabel>
+              <div className="mt-2 flex h-12 items-end justify-between gap-3">
+                <span className="text-3xl font-bold tracking-[-0.01em] text-ink">{formatFull(totals.lastWeek)}</span>
+                <div className="shrink-0 pb-1.5">
+                  <Sparkline values={report.sparkline} width={88} height={28} color="var(--avg)" />
                 </div>
               </div>
-              <div className="hidden shrink-0 pb-1 lg:block">
-                <Sparkline values={report.sparkline} />
+              <div className="mt-2 text-sm">
+                {trend === null ? (
+                  <span className="text-muted">Not enough data for a trend yet</span>
+                ) : (
+                  <>
+                    <span className={trend > 0 ? "text-up" : trend < 0 ? "text-down" : "text-ink-2"}>
+                      {trend > 0 ? "▲" : trend < 0 ? "▼" : ""} {formatPct(trend)}
+                    </span>
+                    <span className="text-muted"> vs previous week</span>
+                  </>
+                )}
               </div>
             </div>
             <Stat
               label="Last 30 days"
+              color="--weekend"
               value={formatCompact(totals.lastMonth)}
               sub={totals.lastMonth >= 1000 ? formatFull(totals.lastMonth) : undefined}
             />
-            <Stat label="All time" value={formatCompact(totals.allTime)} sub={`since ${formatDay(report.daily.start)}`} />
             <Stat
               label="Best week"
+              color="--series-4"
               value={totals.peakWeek ? formatCompact(totals.peakWeek.downloads) : "–"}
               sub={totals.peakWeek ? `week of ${formatDay(totals.peakWeek.start)}` : undefined}
             />
@@ -252,7 +292,14 @@ export default async function PackagePage({ params }: PageProps<"/[...pkg]">) {
         </Section>
 
         <Section id="share" title="Share">
-          <SharePanel pageUrl={pageUrl} cardUrl={cardUrl} cardPath={`/api/card${packagePath(meta.name)}`} name={meta.name} />
+          <SharePanel
+            pageUrl={pageUrl}
+            cardUrl={cardUrl}
+            previewSrc={cardPath(meta.name)}
+            downloadWide={cardPath(meta.name, { download: "1" })}
+            downloadSquare={cardPath(meta.name, { format: "square", download: "1" })}
+            name={meta.name}
+          />
         </Section>
 
         <p className="px-1 text-xs text-muted">
@@ -261,5 +308,6 @@ export default async function PackagePage({ params }: PageProps<"/[...pkg]">) {
         </p>
       </div>
     </main>
+    </>
   );
 }

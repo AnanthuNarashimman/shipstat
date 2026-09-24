@@ -2,10 +2,17 @@
 
 import { useState } from "react";
 
-// cardUrl is absolute (for pasting elsewhere); cardPath is same-origin (for this page's own image and downloads).
-type Props = { pageUrl: string; cardUrl: string; cardPath: string; name: string };
+// cardUrl is absolute (for pasting elsewhere); the rest are same-origin paths for this page's image and downloads.
+type Props = {
+  pageUrl: string;
+  cardUrl: string;
+  previewSrc: string;
+  downloadWide: string;
+  downloadSquare: string;
+  name: string;
+};
 
-export function SharePanel({ pageUrl, cardUrl, cardPath, name }: Props) {
+export function SharePanel({ pageUrl, cardUrl, previewSrc, downloadWide, downloadSquare, name }: Props) {
   const [copied, setCopied] = useState<string | null>(null);
 
   async function copy(what: string, text: string) {
@@ -26,7 +33,7 @@ export function SharePanel({ pageUrl, cardUrl, cardPath, name }: Props) {
     <div className="grid gap-6 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] md:items-center">
       {/* eslint-disable-next-line @next/next/no-img-element -- generated PNG, already sized */}
       <img
-        src={cardPath}
+        src={previewSrc}
         alt={`Share card for ${name}`}
         width={1200}
         height={630}
@@ -40,10 +47,10 @@ export function SharePanel({ pageUrl, cardUrl, cardPath, name }: Props) {
           <button type="button" className={button} onClick={() => copy("link", pageUrl)}>
             {copied === "link" ? "Copied" : "Copy link"}
           </button>
-          <a className={button} href={`${cardPath}?download=1`} download>
+          <a className={button} href={downloadWide} download>
             Download card
           </a>
-          <a className={button} href={`${cardPath}?format=square&download=1`} download>
+          <a className={button} href={downloadSquare} download>
             Square
           </a>
           <button type="button" className={button} onClick={() => copy("md", markdown)}>

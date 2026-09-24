@@ -9,3 +9,12 @@ export const siteUrl =
 export function packagePath(name: string): string {
   return "/" + name.split("/").map((part) => encodeURIComponent(part).replace(/^%40/, "@")).join("/");
 }
+
+// Bump when the share card's design changes: a new URL skips browser and social-network caches of the old image.
+const CARD_VERSION = "4";
+
+// Same-origin URL of a package's share card, with optional extra query params.
+export function cardPath(name: string, params: Record<string, string> = {}): string {
+  const query = new URLSearchParams({ v: CARD_VERSION, ...params });
+  return `/api/card${packagePath(name)}?${query}`;
+}

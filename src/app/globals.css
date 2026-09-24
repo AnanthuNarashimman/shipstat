@@ -22,6 +22,19 @@
   --accent-wash: rgb(232 89 12 / 0.1);
   --marker: #5c4b42; /* release markers: neutral so they never compete with the series */
 
+  /* chart roles, validated together (all pairs, incl. colour-blind): weekday bars, weekend bars, 7-day average */
+  --weekday: #e8590c;
+  --weekend: #1baf7a;
+  --avg: #6d5bd0;
+
+  /* categorical order for per-version colours, validated as adjacent pairs; "other" uses --muted */
+  --series-1: #e8590c;
+  --series-2: #6d5bd0;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-5: #d55181;
+  --series-6: #2a78d6;
+
   /* supporting accents */
   --red: #e03a2f;
   --red-wash: #ffe4df;
@@ -67,6 +80,17 @@
   --accent-wash: rgb(232 98 26 / 0.16);
   --marker: #d4c6cf;
 
+  --weekday: #e8621a;
+  --weekend: #199e70;
+  --avg: #9085e9;
+
+  --series-1: #e8621a;
+  --series-2: #9085e9;
+  --series-3: #199e70;
+  --series-4: #c98500;
+  --series-5: #d55181;
+  --series-6: #3987e5;
+
   --red: #ff6b5e;
   --red-wash: #3d1d27;
   --yellow: #ffc83d;
@@ -104,6 +128,9 @@
   --color-accent-soft: var(--accent-soft);
   --color-accent-wash: var(--accent-wash);
   --color-marker: var(--marker);
+  --color-weekday: var(--weekday);
+  --color-weekend: var(--weekend);
+  --color-avg: var(--avg);
   --color-red: var(--red);
   --color-red-wash: var(--red-wash);
   --color-yellow: var(--yellow);

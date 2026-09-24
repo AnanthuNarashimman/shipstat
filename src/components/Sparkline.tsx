@@ -1,4 +1,14 @@
-export function Sparkline({ values, width = 120, height = 32 }: { values: number[]; width?: number; height?: number }) {
+export function Sparkline({
+  values,
+  width = 120,
+  height = 32,
+  color = "var(--accent)",
+}: {
+  values: number[];
+  width?: number;
+  height?: number;
+  color?: string;
+}) {
   if (values.length < 2) return null;
   const max = Math.max(...values, 1);
   const pad = 4;
@@ -10,8 +20,8 @@ export function Sparkline({ values, width = 120, height = 32 }: { values: number
   const [lx, ly] = pts.at(-1)!;
   return (
     <svg width={width} height={height} aria-hidden className="overflow-visible">
-      <path d={d} fill="none" stroke="var(--accent)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
-      <circle cx={lx} cy={ly} r={3.5} fill="var(--accent)" stroke="var(--surface)" strokeWidth={2} />
+      <path d={d} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+      <circle cx={lx} cy={ly} r={3.5} fill={color} stroke="var(--surface)" strokeWidth={2} />
     </svg>
   );
 }

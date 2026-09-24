@@ -2,10 +2,10 @@
 
 import { useRef } from "react";
 
-type Props = { name: string; path: string; weekly: string };
+type Props = { name: string; card: string; total: string };
 
 // The real share card for one package, staged as a post that unfurled it, tilting toward the pointer.
-export function CardShowcase({ name, path, weekly }: Props) {
+export function CardShowcase({ name, card, total }: Props) {
   const stageRef = useRef<HTMLDivElement>(null);
 
   function onMove(e: React.PointerEvent) {
@@ -49,12 +49,12 @@ export function CardShowcase({ name, path, weekly }: Props) {
             </div>
           </div>
           <p className="mt-3 text-[15px] text-ink">
-            {name} is at {weekly} weekly downloads 🧡{" "}
-            <span className="text-accent">shipstat{path.replace("/api/card", "")}</span>
+            {name} is at {total} downloads 🧡{" "}
+            <span className="text-accent">shipstat{card.split("?")[0].replace("/api/card", "")}</span>
           </p>
           {/* eslint-disable-next-line @next/next/no-img-element -- generated PNG */}
           <img
-            src={path}
+            src={card}
             alt={`The shipstat card for ${name}`}
             width={1200}
             height={630}

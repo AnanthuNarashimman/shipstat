@@ -14,8 +14,8 @@ export async function ProductPreview({ name }: { name: string }) {
   const trend = totals.trendPct;
 
   const stats = [
+    { label: "This week", value: formatCompact(totals.lastWeek) },
     { label: "Last 30 days", value: formatCompact(totals.lastMonth) },
-    { label: "All time", value: formatCompact(totals.allTime) },
     { label: "Best week", value: totals.peakWeek ? formatCompact(totals.peakWeek.downloads) : "–" },
   ];
 
@@ -50,14 +50,14 @@ export async function ProductPreview({ name }: { name: string }) {
               <span className="text-2xl font-semibold tracking-tight text-ink">{meta.name}</span>
               <span className="rounded-md bg-sunken px-1.5 py-0.5 font-mono text-xs text-ink-2">v{meta.version}</span>
             </div>
-            <div className="mt-4 text-xs text-muted">Weekly downloads</div>
+            <div className="mt-4 text-xs text-muted">All-time downloads</div>
             <div className="mt-1 flex items-baseline gap-3">
               <span className="text-4xl font-semibold tracking-[-0.01em] text-ink sm:text-5xl">
-                {formatFull(totals.lastWeek)}
+                {formatFull(totals.allTime)}
               </span>
               {trend !== null && (
                 <span className={`text-sm ${trend >= 0 ? "text-up" : "text-down"}`}>
-                  {trend > 0 ? "▲" : trend < 0 ? "▼" : ""} {formatPct(trend)}
+                  {trend > 0 ? "▲" : trend < 0 ? "▼" : ""} {formatPct(trend)} this week
                 </span>
               )}
             </div>

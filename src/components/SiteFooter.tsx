@@ -32,32 +32,38 @@ const COLUMNS: { title: string; links: { label: string; href: string; external?:
   },
 ];
 
-// A skyline of square pixels in the wave colours, generated once on the server.
+// Stable pseudo-random value per cell (same idea as the hero canvas).
+function hash(x: number, y: number, seed: number): number {
+  const v = Math.sin(x * 127.1 + y * 311.7 + seed * 74.7) * 43758.5453;
+  return v - Math.floor(v);
+}
+
+// A still frame of the hero's pixel waves, rising out of the page onto the footer's top edge.
+// Same wave shape, dithered crest and red → orange → yellow bands; generated once on the server.
 function PixelSkyline() {
-  const cols = 120;
+  const cols = 160;
+  const rows = 7;
   const size = 10;
-  const gap = 2;
-  const pitch = size + gap;
-  const maxRows = 5;
+  const pitch = 12;
   const rects: { x: number; y: number; fill: string }[] = [];
   for (let i = 0; i < cols; i++) {
-    const h = Math.max(
-      1,
-      Math.round(2.6 + 1.5 * Math.sin(i * 0.19) + 0.9 * Math.sin(i * 0.53 + 1.7) + 0.5 * Math.sin(i * 1.3)),
-    );
-    for (let j = 0; j < Math.min(h, maxRows); j++) {
-      const top = j === h - 1;
-      const band = j === 0 ? "red" : top ? "yellow" : "orange";
-      const strong = (i * 7 + j * 13) % 11 === 0;
-      rects.push({ x: i * pitch, y: (maxRows - 1 - j) * pitch, fill: `var(--wave-${band}${strong ? "-strong" : ""})` });
+    const wave = 0.46 + 0.2 * Math.sin(i * 0.11) + 0.12 * Math.sin(i * 0.043 + 1.3) + 0.06 * Math.sin(i * 0.31);
+    const h = wave * rows;
+    const full = Math.floor(h);
+    for (let j = 0; j <= full; j++) {
+      if (j === full && hash(i, j, 1) > h - full) continue;
+      const depth = j / Math.max(1, h);
+      const band = depth < 0.34 ? "red" : depth < 0.72 ? "orange" : "yellow";
+      const strong = hash(i, j, 8) < 0.06 + depth * 0.1;
+      rects.push({ x: i * pitch, y: (rows - 1 - j) * pitch, fill: `var(--wave-${band}${strong ? "-strong" : ""})` });
     }
   }
   return (
     <svg
       aria-hidden
-      viewBox={`0 0 ${cols * pitch - gap} ${maxRows * pitch - gap}`}
+      viewBox={`0 0 ${cols * pitch - (pitch - size)} ${rows * pitch - (pitch - size)}`}
       preserveAspectRatio="xMidYMax slice"
-      className="block h-[60px] w-full"
+      className="block h-[80px] w-full"
     >
       {rects.map((r) => (
         <rect key={`${r.x}-${r.y}`} x={r.x} y={r.y} width={size} height={size} style={{ fill: r.fill }} />
@@ -68,8 +74,11 @@ function PixelSkyline() {
 
 export function SiteFooter() {
   return (
-    <footer className="relative mt-10 overflow-hidden border-t border-line bg-surface">
-      <PixelSkyline />
+    <>
+      <div className="mt-16">
+        <PixelSkyline />
+      </div>
+      <footer className="relative overflow-hidden border-t border-line bg-surface">
 
       <div className="mx-auto grid max-w-6xl gap-12 px-5 pt-14 pb-10 sm:px-8 md:grid-cols-[1.4fr_repeat(3,1fr)]">
         <div>
@@ -129,6 +138,7 @@ export function SiteFooter() {
           shipstat
         </span>
       </div>
-    </footer>
+      </footer>
+    </>
   );
 }

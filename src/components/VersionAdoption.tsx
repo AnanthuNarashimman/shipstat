@@ -8,7 +8,7 @@ export function VersionAdoption({ versions, latest }: { versions: Report["versio
   const max = Math.max(...versions.rows.map((r) => r.share));
   return (
     <ul className="space-y-3">
-      {versions.rows.map((row) => (
+      {versions.rows.map((row, i) => (
         <li key={row.version} className="grid grid-cols-[5.5rem_1fr_5.5rem] items-center gap-3 text-sm sm:grid-cols-[7rem_1fr_6rem]">
           <span className="flex items-center gap-1.5 truncate text-ink-2" title={row.version}>
             <span className="truncate">{row.version === "other" ? "Other" : row.version}</span>
@@ -20,8 +20,13 @@ export function VersionAdoption({ versions, latest }: { versions: Report["versio
           </span>
           <span className="h-2.5 rounded-sm bg-sunken">
             <span
-              className="block h-full rounded-r-[4px] bg-accent"
-              style={{ width: `${Math.max(1, (row.share / max) * 100)}%`, opacity: row.version === "other" ? 0.45 : 1 }}
+              className="block h-full rounded-r-[4px]"
+              style={{
+                width: `${Math.max(1, (row.share / max) * 100)}%`,
+                // Colours in a fixed, validated order (see --series-* in globals.css); "other" stays neutral.
+                background: row.version === "other" ? "var(--muted)" : `var(--series-${(i % 6) + 1})`,
+                opacity: row.version === "other" ? 0.5 : 1,
+              }}
             />
           </span>
           <span className="text-right tabular-nums">

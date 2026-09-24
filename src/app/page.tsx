@@ -10,7 +10,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { packagesAnalyzed } from "@/lib/counter";
 import { formatCompact, formatFull } from "@/lib/format";
 import { getReport } from "@/lib/report";
-import { packagePath } from "@/lib/site";
+import { cardPath } from "@/lib/site";
 
 export const revalidate = 600;
 
@@ -86,7 +86,7 @@ export default async function Home() {
     packagesAnalyzed(),
     getReport(PREVIEW_PACKAGE).catch(() => null),
   ]);
-  const showcase = preview ? { name: preview.meta.name, weekly: preview.totals.lastWeek } : null;
+  const showcase = preview ? { name: preview.meta.name, total: preview.totals.allTime } : null;
 
   return (
     <div className="relative overflow-x-clip">
@@ -275,8 +275,8 @@ export default async function Home() {
             <div data-reveal style={{ "--reveal-delay": "150ms" } as React.CSSProperties}>
               <CardShowcase
                 name={showcase.name}
-                path={`/api/card${packagePath(showcase.name)}`}
-                weekly={formatCompact(showcase.weekly)}
+                card={cardPath(showcase.name)}
+                total={formatCompact(showcase.total)}
               />
             </div>
           </div>

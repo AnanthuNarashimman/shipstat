@@ -19,8 +19,43 @@ const C = {
   down: "#d9342b",
 };
 
-// Same pixel palette as the hero waves, shown beside the wordmark.
-const PIXELS = ["#ffc1b6", "#ff7a66", "#ffd2a8", "#ff9a3d", "#ffe6a0", "#ffc83d"];
+// The hero's pixel-wave palette (light theme), bottom to crest: red → orange → yellow.
+const WAVE_SOFT = ["#ffc1b6", "#ffd2a8", "#ffe6a0"];
+const WAVE_STRONG = ["#ff7a66", "#ff9a3d", "#ffc83d"];
+const WAVE_CELL = 12;
+const WAVE_PITCH = 15;
+const WAVE_ROWS = 5;
+
+function hash(x: number, y: number, seed: number): number {
+  const v = Math.sin(x * 127.1 + y * 311.7 + seed * 74.7) * 43758.5453;
+  return v - Math.floor(v);
+}
+
+// A still frame of the hero waves: same shape, dithered crest and colour bands.
+function PixelWaves({ width }: { width: number }) {
+  const cols = Math.ceil(width / WAVE_PITCH);
+  const height = WAVE_ROWS * WAVE_PITCH;
+  const cells: { x: number; y: number; fill: string }[] = [];
+  for (let i = 0; i < cols; i++) {
+    const wave = 0.46 + 0.2 * Math.sin(i * 0.11) + 0.12 * Math.sin(i * 0.043 + 1.3) + 0.06 * Math.sin(i * 0.31);
+    const h = wave * WAVE_ROWS;
+    const full = Math.floor(h);
+    for (let j = 0; j <= full; j++) {
+      if (j === full && hash(i, j, 1) > h - full) continue;
+      const depth = j / Math.max(1, h);
+      const band = depth < 0.34 ? 0 : depth < 0.72 ? 1 : 2;
+      const strong = hash(i, j, 8) < 0.06 + depth * 0.1;
+      cells.push({ x: i * WAVE_PITCH, y: height - (j + 1) * WAVE_PITCH + (WAVE_PITCH - WAVE_CELL), fill: strong ? WAVE_STRONG[band] : WAVE_SOFT[band] });
+    }
+  }
+  return (
+    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
+      {cells.map((c) => (
+        <rect key={`${c.x}-${c.y}`} x={c.x} y={c.y} width={WAVE_CELL} height={WAVE_CELL} fill={c.fill} />
+      ))}
+    </svg>
+  );
+}
 
 // Google Fonts serves TTF (which the image renderer needs) when no browser user agent is sent.
 async function loadFont(family: string, weight: number): Promise<ArrayBuffer | null> {
@@ -76,28 +111,32 @@ export async function GET(request: Request, ctx: RouteContext<"/api/card/[...pkg
   const path = spark ? sparkPath(spark, sparkW, sparkH) : null;
 
   const [regular, semibold, display] = await Promise.all([
-    loadFont("Google Sans", 400),
-    loadFont("Google Sans", 600),
-    loadFont("Google Sans", 700),
+    // The static Google Sans files use a font feature the image renderer can't parse; Flex renders fine.
+    loadFont("Google Sans Flex", 400),
+    loadFont("Google Sans Flex", 600),
+    loadFont("Google Sans Flex", 800),
   ]);
   const fonts = [
-    ...(regular ? [{ name: "Google Sans", data: regular, weight: 400 as const, style: "normal" as const }] : []),
-    ...(semibold ? [{ name: "Google Sans", data: semibold, weight: 600 as const, style: "normal" as const }] : []),
-    ...(display ? [{ name: "Google Sans", data: display, weight: 800 as const, style: "normal" as const }] : []),
+    ...(regular ? [{ name: "Google Sans Flex", data: regular, weight: 400 as const, style: "normal" as const }] : []),
+    ...(semibold ? [{ name: "Google Sans Flex", data: semibold, weight: 600 as const, style: "normal" as const }] : []),
+    ...(display ? [{ name: "Google Sans Flex", data: display, weight: 800 as const, style: "normal" as const }] : []),
   ];
 
   const nameSize = meta.name.length > 28 ? 44 : meta.name.length > 18 ? 54 : 64;
   // Exact counts are the point for small packages; past a million, compact reads better and fits.
-  const weekly = totals.lastWeek >= 1_000_000 ? formatCompact(totals.lastWeek) : formatFull(totals.lastWeek);
-  const weeklySize = square ? 168 : weekly.length > 6 ? 112 : 132;
+  const exactOrCompact = (n: number) => (n >= 1_000_000 ? formatCompact(n) : formatFull(n));
+  const total = exactOrCompact(totals.allTime);
+  const weekly = exactOrCompact(totals.lastWeek);
+  const totalSize = square ? 168 : total.length > 6 ? 112 : 132;
 
   const headline = (
     <div style={{ display: "flex", flexDirection: "column" }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 18 }}>
-        <div style={{ fontSize: weeklySize, fontWeight: 800, letterSpacing: -4, lineHeight: 1 }}>{weekly}</div>
+        <div style={{ fontSize: totalSize, fontWeight: 800, letterSpacing: -4, lineHeight: 1 }}>{total}</div>
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 14, fontSize: 28 }}>
-        <span style={{ color: C.ink2 }}>weekly downloads</span>
+      <div style={{ display: "flex", marginTop: 12, fontSize: 28, color: C.ink2 }}>downloads all time</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 18, fontSize: 24 }}>
+        <span style={{ display: "flex", color: C.ink, fontWeight: 600 }}>{weekly} this week</span>
         {trend !== null && (
           <span
             style={{
@@ -131,8 +170,8 @@ export async function GET(request: Request, ctx: RouteContext<"/api/card/[...pkg
     </svg>
   );
 
-  const image = new ImageResponse(
-    (
+  const card = (
+
       <div
         style={{
           width: "100%",
@@ -141,9 +180,11 @@ export async function GET(request: Request, ctx: RouteContext<"/api/card/[...pkg
           flexDirection: "column",
           justifyContent: "space-between",
           padding: square ? 72 : 64,
+          paddingBottom: WAVE_ROWS * WAVE_PITCH + (square ? 40 : 28),
+          position: "relative",
           background: C.bg,
           color: C.ink,
-          fontFamily: "Google Sans",
+          fontFamily: "Google Sans Flex",
         }}
       >
         <div style={{ display: "flex", flexDirection: "column" }}>
@@ -196,27 +237,33 @@ export async function GET(request: Request, ctx: RouteContext<"/api/card/[...pkg
           }}
         >
           <span>
-            {formatCompact(totals.allTime)} all time · released {formatAgo(report.releases.daysSinceLast)}
+            {exactOrCompact(totals.lastMonth)} in the last 30 days · released {formatAgo(report.releases.daysSinceLast)}
           </span>
-          <span style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <span style={{ display: "flex", gap: 4 }}>
-              {PIXELS.map((c) => (
-                <span key={c} style={{ width: 14, height: 14, background: c }} />
-              ))}
-            </span>
-            <span style={{ color: C.accent, fontWeight: 800 }}>shipstat</span>
-          </span>
+          <span style={{ color: C.accent, fontWeight: 800 }}>shipstat</span>
+        </div>
+
+        <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, display: "flex" }}>
+          <PixelWaves width={width} />
         </div>
       </div>
-    ),
-    { width, height, fonts: fonts.length ? fonts : undefined },
   );
 
-  const headers = new Headers(image.headers);
-  headers.set("cache-control", "public, max-age=3600, s-maxage=21600, stale-while-revalidate=86400");
+  // Render fully before responding. If a font trips up the renderer, fall back to its built-in font
+  // rather than sending a broken image.
+  let png: ArrayBuffer;
+  try {
+    png = await new ImageResponse(card, { width, height, fonts: fonts.length ? fonts : undefined }).arrayBuffer();
+  } catch (e) {
+    console.error("card render failed with custom fonts, retrying with the default font", e);
+    png = await new ImageResponse(card, { width, height }).arrayBuffer();
+  }
+
+  const headers = new Headers({ "content-type": "image/png" });
+  // Browsers always revalidate (so a new card design shows up at once); the CDN keeps it for 6 hours.
+  headers.set("cache-control", "public, max-age=0, s-maxage=21600, stale-while-revalidate=86400");
   if (search.get("download")) {
     const file = meta.name.replace(/^@/, "").replace(/\//g, "-");
     headers.set("content-disposition", `attachment; filename="${file}-shipstat${square ? "-square" : ""}.png"`);
   }
-  return new Response(image.body, { status: 200, headers });
+  return new Response(png, { status: 200, headers });
 }

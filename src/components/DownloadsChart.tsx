@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 
-import { addDays, diffDays, formatDay, formatMonth } from "@/lib/dates";
+import { addDays, diffDays, formatDay, formatMonth, weekdayOf } from "@/lib/dates";
 import { formatCompact, formatFull } from "@/lib/format";
 import { rollingAverage, sum, weeklyBuckets } from "@/lib/series";
 
@@ -44,6 +44,13 @@ function niceMax(max: number): { top: number; step: number } {
   return { top: Math.ceil(max / step) * step, step };
 }
 
+const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+function isWeekend(day: string): boolean {
+  const wd = weekdayOf(day);
+  return wd === 0 || wd === 6;
+}
+
 function barPath(x: number, y: number, w: number, h: number): string {
   const r = Math.min(4, w / 2, h);
   return `M${x},${y + h}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h}Z`;
@@ -54,6 +61,7 @@ export function DownloadsChart({ start, counts, releases, compact = false }: Pro
   const [range, setRange] = useState<RangeKey>(enabled(1) ? "90d" : "30d");
   const [hover, setHover] = useState<number | null>(null);
   const [width, setWidth] = useState(720);
+  const areaId = useId();
   const boxRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -235,10 +243,13 @@ export function DownloadsChart({ start, counts, releases, compact = false }: Pro
         {!weekly && (
           <>
             <span className="flex items-center gap-1.5">
-              <span className="inline-block h-2.5 w-2.5 rounded-[2px] bg-accent-soft" /> Daily
+              <span className="inline-block h-2.5 w-2.5 rounded-[2px] bg-weekday opacity-60" /> Weekday
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="inline-block h-0.5 w-3.5 rounded bg-accent" /> 7-day average
+              <span className="inline-block h-2.5 w-2.5 rounded-[2px] bg-weekend opacity-60" /> Weekend
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="inline-block h-0.5 w-3.5 rounded bg-avg" /> 7-day average
             </span>
           </>
         )}
@@ -335,8 +346,8 @@ export function DownloadsChart({ start, counts, releases, compact = false }: Pro
                 <path
                   key={p.start}
                   d={barPath(cx - barW / 2, y(p.value), barW, h)}
-                  fill="var(--accent-soft)"
-                  opacity={hover === null || hover === i ? 1 : 0.55}
+                  fill={isWeekend(p.start) ? "var(--weekend)" : "var(--weekday)"}
+                  opacity={hover === null ? 0.55 : hover === i ? 0.9 : 0.3}
                 />
               );
             })}
@@ -345,7 +356,7 @@ export function DownloadsChart({ start, counts, releases, compact = false }: Pro
             <path
               d={linePath(view.points.map((p) => p.avg))}
               fill="none"
-              stroke="var(--accent)"
+              stroke="var(--avg)"
               strokeWidth={2}
               strokeLinejoin="round"
               strokeLinecap="round"
@@ -354,9 +365,15 @@ export function DownloadsChart({ start, counts, releases, compact = false }: Pro
 
           {weekly && view.points.length > 0 && (
             <>
+              <defs>
+                <linearGradient id={areaId} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" style={{ stopColor: "var(--accent)", stopOpacity: 0.22 }} />
+                  <stop offset="100%" style={{ stopColor: "var(--yellow)", stopOpacity: 0.06 }} />
+                </linearGradient>
+              </defs>
               <path
                 d={`${linePath(view.points.map((p) => p.value))}L${xPoint(view.points.at(-1)!)},${M.top + innerH}L${xPoint(view.points[0])},${M.top + innerH}Z`}
-                fill="var(--accent-wash)"
+                fill={`url(#${areaId})`}
               />
               <path
                 d={linePath(view.points.map((p) => p.value))}
@@ -393,7 +410,7 @@ export function DownloadsChart({ start, counts, releases, compact = false }: Pro
                   cx={xPoint(hovered)}
                   cy={y((weekly ? hovered.value : hovered.avg)!)}
                   r={4}
-                  fill="var(--accent)"
+                  fill={weekly ? "var(--accent)" : "var(--avg)"}
                   stroke="var(--surface)"
                   strokeWidth={2}
                 />
@@ -412,7 +429,16 @@ export function DownloadsChart({ start, counts, releases, compact = false }: Pro
             }
           >
             <div className="text-muted">
-              {weekly ? `${formatDay(hovered.start, false)} – ${formatDay(hovered.end)}` : formatDay(hovered.start)}
+              {weekly ? (
+                `${formatDay(hovered.start, false)} – ${formatDay(hovered.end)}`
+              ) : (
+                <span className="flex items-center gap-1.5">
+                  <span
+                    className={`inline-block size-2 rounded-[2px] ${isWeekend(hovered.start) ? "bg-weekend" : "bg-weekday"}`}
+                  />
+                  {WEEKDAYS[weekdayOf(hovered.start)]}, {formatDay(hovered.start)}
+                </span>
+              )}
             </div>
             {hovered.gaps && !weekly ? (
               <div className="mt-1 text-ink-2">npm has no data for this day</div>
@@ -425,7 +451,7 @@ export function DownloadsChart({ start, counts, releases, compact = false }: Pro
             {!weekly && hovered.avg !== null && (
               <div className="mt-1 flex items-center justify-between gap-4">
                 <span className="flex items-center gap-1.5 text-ink tabular-nums">
-                  <span className="inline-block h-0.5 w-3 rounded bg-accent" />
+                  <span className="inline-block h-0.5 w-3 rounded bg-avg" />
                   {formatFull(Math.round(hovered.avg))}
                 </span>
                 <span className="text-muted">7-day avg</span>
