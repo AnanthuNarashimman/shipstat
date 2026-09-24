@@ -68,6 +68,7 @@ export function usePackageSearch(hash = "") {
       e.preventDefault();
       setActive((i) => (i <= 0 ? hits.length - 1 : i - 1));
     } else if (e.key === "Enter") {
+      if (e.nativeEvent.isComposing) return; // still composing with a mobile/IME keyboard
       e.preventDefault();
       submit();
     } else if (e.key === "Escape") {
@@ -83,6 +84,10 @@ export function usePackageSearch(hash = "") {
     "aria-activedescendant": visible && active >= 0 ? `${listId}-${active}` : undefined,
     autoComplete: "off",
     spellCheck: false,
+    // Phone keyboards: no auto-capitals or autocorrect on package names, and a "Go" key.
+    autoCapitalize: "none",
+    autoCorrect: "off",
+    enterKeyHint: "go" as const,
     value: query,
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
       setQuery(e.target.value);
@@ -92,5 +97,15 @@ export function usePackageSearch(hash = "") {
     onKeyDown,
   };
 
-  return { boxRef, listId, query, hits, active, setActive, visible, go, submit, pending, inputProps };
+  // Wrap inputs in a <form {...formProps}>: some mobile keyboards never send an Enter keydown, but their
+  // Go/Search key always submits the form.
+  const formProps = {
+    role: "search" as const,
+    onSubmit: (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      submit();
+    },
+  };
+
+  return { boxRef, listId, query, hits, active, setActive, visible, go, submit, pending, inputProps, formProps };
 }

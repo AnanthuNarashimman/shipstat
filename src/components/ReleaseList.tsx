@@ -9,6 +9,10 @@ export function ReleaseList({ releases }: { releases: Release[] }) {
   const list = (stable.length ? stable : releases.slice().reverse()).slice(0, SHOWN);
   const prereleases = releases.length - stable.length;
 
+  if (releases.length === 0) {
+    return <p className="text-sm text-muted">npm doesn&apos;t have release dates for this package.</p>;
+  }
+
   return (
     <div>
       <ul className="divide-y divide-line">

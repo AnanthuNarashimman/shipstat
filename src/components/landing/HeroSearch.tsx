@@ -55,7 +55,7 @@ export function HeroSearch() {
   const [tab, setTab] = useState<(typeof TABS)[number]["key"]>("downloads");
   const [focused, setFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const { boxRef, listId, query, hits, active, setActive, visible, go, submit, pending, inputProps } = usePackageSearch(
+  const { boxRef, listId, query, hits, active, setActive, visible, go, pending, inputProps, formProps } = usePackageSearch(
     tab === "downloads" ? "" : `#${tab}`,
   );
   const placeholder = useTypedPlaceholder(!focused && query === "");
@@ -69,7 +69,8 @@ export function HeroSearch() {
 
   return (
     <div ref={boxRef} className="relative w-full text-left">
-      <div className="rounded-2xl border border-line bg-surface transition-colors focus-within:border-accent/50">
+      {/* A form, so a phone keyboard's Go key submits even when it never sends an Enter keydown */}
+      <form {...formProps} className="rounded-2xl border border-line bg-surface transition-colors focus-within:border-accent/50">
         <label className="flex items-center gap-3 px-5 pt-5 pb-4 sm:px-6">
           <svg aria-hidden viewBox="0 0 20 20" className="size-5 shrink-0 text-muted">
             <path
@@ -120,11 +121,17 @@ export function HeroSearch() {
             ))}
           </div>
           <button
-            type="button"
+            type="submit"
             aria-label={pending ? "Loading stats" : "Show stats"}
             aria-busy={pending}
             disabled={pending}
-            onClick={() => (query.trim() ? submit() : inputRef.current?.focus())}
+            onClick={(e) => {
+              // Nothing typed yet: put the cursor in the box instead of submitting.
+              if (!query.trim()) {
+                e.preventDefault();
+                inputRef.current?.focus();
+              }
+            }}
             className="flex h-10 w-12 shrink-0 items-center justify-center btn-cta rounded-xl disabled:cursor-progress"
           >
             {/* The arrow turns into a spinner while the search is on its way */}
@@ -137,7 +144,7 @@ export function HeroSearch() {
             )}
           </button>
         </div>
-      </div>
+      </form>
       {visible && <SearchResults listId={listId} hits={hits} active={active} setActive={setActive} go={go} />}
     </div>
   );

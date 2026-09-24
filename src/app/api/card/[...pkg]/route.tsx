@@ -49,7 +49,8 @@ export async function GET(request: Request, ctx: RouteContext<"/api/card/[...pkg
   const { pkg } = await ctx.params;
   const name = pkg.map((s) => decodeURIComponent(s)).join("/");
   if (!isValidPackageName(name)) return new Response("Not found", { status: 404 });
-  const report = await getReport(name);
+  // Exact name first; a capitalised name falls back to the lowercase package (see the package page).
+  const report = (await getReport(name)) ?? (name !== name.toLowerCase() ? await getReport(name.toLowerCase()) : null);
   if (!report) return new Response("Not found", { status: 404 });
 
   const search = new URL(request.url).searchParams;

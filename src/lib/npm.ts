@@ -153,7 +153,8 @@ export async function fetchPackageMeta(name: string): Promise<PackageMeta | null
   });
   const latestVersion = doc?.["dist-tags"]?.latest;
   const latest = latestVersion ? doc.versions?.[latestVersion] : undefined;
-  if (!doc || !latest || !doc.time || doc.time.unpublished) return null;
+  // Old packages can lack `time` (publish dates) entirely; that doesn't mean they don't exist.
+  if (!doc || !latest || doc.time?.unpublished) return null;
 
   const releases: Release[] = Object.keys(doc.versions ?? {})
     .filter((v) => typeof doc.time?.[v] === "string")
@@ -170,7 +171,8 @@ export async function fetchPackageMeta(name: string): Promise<PackageMeta | null
     keywords: (doc.keywords ?? []).slice(0, 8),
     maintainers: doc.maintainers?.length ?? 0,
     people: peopleOf(doc, latest),
-    created: (doc.time.created ?? releases[0]?.date ?? toDay(new Date())).slice(0, 10),
+    // Unknown creation date: start download history at the beginning of npm's records.
+    created: (doc.time?.created ?? releases[0]?.date ?? DOWNLOADS_EPOCH).slice(0, 10),
     deprecated: latest.deprecated ?? null,
     dependencies: Object.keys(latest.dependencies ?? {}).length,
     unpackedSize: latest.dist?.unpackedSize ?? null,
@@ -180,6 +182,18 @@ export async function fetchPackageMeta(name: string): Promise<PackageMeta | null
     node: latest.engines?.node ?? null,
     releases,
   };
+}
+
+// Cheap existence check: the latest manifest is a few KB, even for huge packages. Cached for a day.
+export async function packageExists(name: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${REGISTRY}/${encodeURIComponent(name).replace(/^%40/, "@")}/latest`, {
+      next: { revalidate: 86400 },
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
 }
 
 // ---------- downloads ----------

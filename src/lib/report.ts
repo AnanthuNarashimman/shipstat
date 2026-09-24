@@ -37,7 +37,7 @@ export type Report = {
     total: number;
   };
   releases: {
-    daysSinceLast: number;
+    daysSinceLast: number | null; // null when npm has no release dates
     cadenceDays: number | null;
   };
 };
@@ -135,11 +135,11 @@ async function buildReport(name: string): Promise<Report | null> {
       total: rows.reduce((s, r) => s + r.downloads, 0),
     },
     releases: {
-      daysSinceLast: lastRelease ? diffDays(lastRelease.date, toDay(new Date())) : 0,
+      daysSinceLast: lastRelease ? diffDays(lastRelease.date, toDay(new Date())) : null,
       cadenceDays: releaseCadence(meta),
     },
   };
 }
 
 // The whole report is cached per package; one visitor or ten thousand, npm is asked once per window.
-export const getReport = unstable_cache(buildReport, ["report-v3"], { revalidate: 21600 });
+export const getReport = unstable_cache(buildReport, ["report-v4"], { revalidate: 21600 });

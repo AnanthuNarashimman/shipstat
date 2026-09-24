@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { after } from "next/server";
 
 import { DownloadsChart } from "@/components/DownloadsChart";
@@ -15,7 +15,7 @@ import { recordLookup } from "@/lib/counter";
 import { formatAgo, formatDay } from "@/lib/dates";
 import { formatBytes, formatCompact, formatFull, formatPct } from "@/lib/format";
 import { adoptionInsight, patternInsight, releaseInsight, trendInsight } from "@/lib/insights";
-import { isValidPackageName, type People } from "@/lib/npm";
+import { isValidPackageName, packageExists, type People } from "@/lib/npm";
 import { NPM_MARK } from "@/lib/og";
 import { githubProfile, makerOf, npmProfile } from "@/lib/people";
 import { getReport, type Report } from "@/lib/report";
@@ -32,12 +32,24 @@ function nameFrom(segments: string[]): string {
   return segments.map((s) => decodeURIComponent(s)).join("/");
 }
 
+// npm names are case-sensitive and new ones are lowercase, but legacy names like JSONStream exist (and
+// "jsonstream" is a different package). So: exact name first, then the lowercase name as a fallback.
+async function findReport(name: string): Promise<Report | null> {
+  const exact = await getReport(name);
+  if (exact || name === name.toLowerCase()) return exact;
+  return getReport(name.toLowerCase());
+}
+
 async function load(segments: string[]): Promise<Report> {
   const name = nameFrom(segments);
   if (!isValidPackageName(name)) notFound();
   const report = await getReport(name);
-  if (!report) notFound();
-  return report;
+  if (report) return report;
+  // Typed "Tracetel" but the package is "tracetel": redirect as soon as a quick check confirms the
+  // lowercase package exists, rather than after building its whole report.
+  const lower = name.toLowerCase();
+  if (lower !== name && (await packageExists(lower))) permanentRedirect(packagePath(lower));
+  notFound();
 }
 
 export async function generateMetadata({ params }: PageProps<"/[...pkg]">): Promise<Metadata> {
@@ -45,7 +57,7 @@ export async function generateMetadata({ params }: PageProps<"/[...pkg]">): Prom
   const name = nameFrom(pkg);
   if (!isValidPackageName(name)) return { title: "Package not found" };
   // Metadata must never take the page down; if npm is failing, the page shows its own error state.
-  const report = await getReport(name).catch(() => undefined);
+  const report = await findReport(name).catch(() => undefined);
   if (report === undefined) return { title: `${name} npm downloads` };
   if (!report) return { title: "Package not found" };
 
@@ -269,7 +281,7 @@ export default async function PackagePage({ params }: PageProps<"/[...pkg]">) {
     <header className="border-b border-line">
       <div className="mx-auto flex max-w-5xl items-center gap-4 px-4 py-4 sm:px-6">
           <Logo size="sm" />
-          <div className="ml-auto flex w-full max-w-sm items-center gap-2">
+          <div className="ml-auto flex w-full max-w-sm min-w-0 items-center gap-2">
             <SearchBox size="sm" />
             <ThemeToggle />
           </div>
@@ -325,7 +337,9 @@ export default async function PackagePage({ params }: PageProps<"/[...pkg]">) {
               Homepage
             </ExternalLink>
           )}
-          <span className="ml-1 text-muted">Last release {formatAgo(report.releases.daysSinceLast)}</span>
+          {report.releases.daysSinceLast !== null && (
+            <span className="ml-1 text-muted">Last release {formatAgo(report.releases.daysSinceLast)}</span>
+          )}
         </div>
       </div>
 
